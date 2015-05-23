@@ -52,28 +52,18 @@ public class ParticleManager {
            }
         }
 
-
         // initialise Nparticles
         for (int i=0 ; i<nParticles; i++){
 
         }
-
-
     }
 
-    /**
-     * detect when particles collide with a wall
-     */
-    public void CollisionDetection(){
 
-
-    }
 
     /**
      * resample and redistribute the particles to keep
      */
-    public void Redistribute(){
-
+    public void redistribute(){
 
         int activeParticles = 0;
         int[] activeParticlesArray = new int[2];
@@ -83,18 +73,14 @@ public class ParticleManager {
         int k =0;
 
         //count the nr. of active and destroyed particles and find where they are
-
-
         for (int i=0; i<nParticles;i++){
             if (particleArray[i].isDestroyed()){
                 destroyedParticles++;
                 destroyedPariclesArray[j]= i;
-
             }
-            else if (!particleArray[i].isDestroyed()) {
+            else{
                 activeParticles++;
                 activeParticlesArray[k] = i;
-
             }
         }
             //give a destroyed particle a random position of an active particle and activate it again.
@@ -106,11 +92,10 @@ public class ParticleManager {
                 particleArray[j].setX(particleArray[k].getX());
                 particleArray[j].setY(particleArray[k].getY());
                 particleArray[j].activate();
-
-
             }
+    }
 
-
+    public void redistribute2(){
     }
 
     /**
