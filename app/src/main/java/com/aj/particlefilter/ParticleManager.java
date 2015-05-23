@@ -66,9 +66,9 @@ public class ParticleManager {
     public void redistribute(){
 
         int activeParticles = 0;
-        int[] activeParticlesArray = new int[2];
+        int[] activeParticlesArray = new int[nParticles];
         int destroyedParticles = 0;
-        int[] destroyedPariclesArray = new int[2];
+        int[] destroyedPariclesArray = new int[nParticles];
         int j = 0;
         int k =0;
 
@@ -77,16 +77,18 @@ public class ParticleManager {
             if (particleArray[i].isDestroyed()){
                 destroyedParticles++;
                 destroyedPariclesArray[j]= i;
+                j++;
             }
             else{
                 activeParticles++;
                 activeParticlesArray[k] = i;
+                k++;
             }
         }
             //give a destroyed particle a random position of an active particle and activate it again.
-            for (int i=0; i<destroyedParticles; i++){
-                j = destroyedPariclesArray[i];
-                int randomLocation = (int)Math.random()*activeParticles;
+        for (int i=0; i<destroyedParticles; i++){
+            j = destroyedPariclesArray[i];
+            int randomLocation = (int)Math.random()*activeParticles;
 
                 k = activeParticlesArray[randomLocation];
                 particleArray[j].setX(particleArray[k].getX());
