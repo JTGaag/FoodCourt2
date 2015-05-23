@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">FoodCourt2</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_accelerometer">AccelerometerActivity</string>
+    <string name="title_activity_graph">GraphActivity</string>
+    <string name="title_activity_graph_alexander">GraphAlexanderActivity</string>
+    <string name="title_activity_graph_joost">GraphJoostActivity</string>
+    <string name="title_activity_wifi_scan">WifiScanActivity</string>
+    <string name="title_activity_bluetooth_scan">BluetoothScanActivity</string>
+    <string name="title_activity_map">MapActivity</string>
+</resources>
