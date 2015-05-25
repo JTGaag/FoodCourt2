@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
@@ -34,6 +35,9 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
     float[] mGeomagnetic;
 
     Float azimut;
+    Float degrees;
+
+    EditText etOffset;
 
     CustomDrawableView mCustomDrawableView;
 
@@ -48,18 +52,18 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
         };
 
         protected void onDraw(Canvas canvas) {
-            int width = getWidth();
-            int height = getHeight();
+            int width = 50;
+            int height = 50;
             int centerx = width/2;
             int centery = height/2;
-            canvas.drawLine(centerx, 0, centerx, height, paint);
-            canvas.drawLine(0, centery, width, centery, paint);
+           // canvas.drawLine(centerx, 0, centerx, height, paint);
+           // canvas.drawLine(0, centery, width, centery, paint);
             // Rotate the canvas with the azimut
             if (azimut != null)
-                canvas.rotate(-azimut*360/(2*3.14159f), centerx, centery);
+                canvas.rotate(-azimut*180/3.14158f, centerx, centery);
             paint.setColor(0xff0000ff);
-            canvas.drawLine(centerx, -1000, centerx, +1000, paint);
-            canvas.drawLine(-1000, centery, 1000, centery, paint);
+            canvas.drawLine(centerx, -25, centerx, +25, paint);
+            //canvas.drawLine(-25, centery, 25, centery, paint);
             canvas.drawText("N", centerx+5, centery-10, paint);
             canvas.drawText("S", centerx-10, centery+15, paint);
             paint.setColor(0xff00ff00);
@@ -71,6 +75,9 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_graph_alexander);
+        tvAccelX = (TextView) findViewById(R.id.accel_x_tv);
+        tvAccelY = (TextView) findViewById(R.id.accel_y_tv);
+        etOffset = (EditText)findViewById(R.id.editText_offset);
 
         mCustomDrawableView = new CustomDrawableView(this);
         setContentView(mCustomDrawableView);    // Register the sensor listeners
@@ -174,8 +181,15 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
                 float orientation[] = new float[3];
                 SensorManager.getOrientation(R, orientation);
                 azimut = orientation[0]; // orientation contains: azimut, pitch and roll
+                degrees = (float)azimut*180/3.14159f;
+               //
+               // tvAccelY.setText("angle : "+ String.format("%-3.6f",azimut) +" [radians]"));
+              //  tvAccelZ.setText("Z : "+ String.format("%-3.6f",azimut*180/3.14159f) +" [degrees]"));
             }
         }
+        tvAccelX.setText("angle : "+ String.format("%-3.6f",azimut) +" [radians]");
+       tvAccelY.setText("angle :" + String.format("%-3.6f", degrees)+ "[degrees]" + "offset:" + etOffset.getText().toString());
+
         mCustomDrawableView.invalidate();
     }
 

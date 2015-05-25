@@ -15,36 +15,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-            <com.jjoe64.graphview.GraphView
+            <EditText
                 android:layout_width="match_parent"
-                android:layout_height="150dp"
-                android:id="@+id/graph_x"
-                android:layout_marginBottom="16dp"/>
-
-            <com.jjoe64.graphview.GraphView
-                android:layout_width="match_parent"
-                android:layout_height="150dp"
-                android:id="@+id/graph_y"
-                android:layout_marginBottom="16dp"/>
-
-            <com.jjoe64.graphview.GraphView
-                android:layout_width="match_parent"
-                android:layout_height="150dp"
-                android:id="@+id/graph_z"
-                android:layout_marginBottom="16dp"/>
-
-            <com.jjoe64.graphview.GraphView
-                android:layout_width="match_parent"
-                android:layout_height="150dp"
-                android:id="@+id/graph_gravity_dot"
-                android:layout_marginBottom="16dp"/>
-
-            <com.jjoe64.graphview.GraphView
-                android:layout_width="match_parent"
-                android:layout_height="150dp"
-                android:id="@+id/graph_horizontal"
-                android:layout_marginBottom="16dp"/>
-
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:ems="10"
+                android:id="@+id/editText_offset"
+                android:hint="offset"/>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
