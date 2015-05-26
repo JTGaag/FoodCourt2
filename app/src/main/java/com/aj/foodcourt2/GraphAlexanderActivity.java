@@ -37,9 +37,15 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
     Float azimut;
     Float degrees;
 
+    float averageMag=0;
+    int averageSize=100;
+    float[] averageMagArray = new float[averageSize];
+    int teller=0;
+
+
     EditText etOffset;
 
-    CustomDrawableView mCustomDrawableView;
+    //CustomDrawableView mCustomDrawableView;
 
     public class CustomDrawableView extends View {
         Paint paint = new Paint();
@@ -77,11 +83,11 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
         setContentView(R.layout.activity_graph_alexander);
         tvAccelX = (TextView) findViewById(R.id.accel_x_tv);
         tvAccelY = (TextView) findViewById(R.id.accel_y_tv);
-        etOffset = (EditText)findViewById(R.id.editText_offset);
+        etOffset = (EditText) findViewById(R.id.editText_offset);
 
-        mCustomDrawableView = new CustomDrawableView(this);
-        setContentView(mCustomDrawableView);    // Register the sensor listeners
-        sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        //  mCustomDrawableView = new CustomDrawableView(this);
+        //setContentView(mCustomDrawableView);    // Register the sensor listeners
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
         //Initiate sensors
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -89,10 +95,11 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
         gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         magneticSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
+        for (int i = 0; i < averageSize; i++) {
+            averageMagArray[i] = 0;
+        }
 
     }
-
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -139,6 +146,7 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
         Sensor sensor = event.sensor;
         double x, y, z;
         long timestamp;
+
 /*
         switch (sensor.getType()){
             case Sensor.TYPE_LINEAR_ACCELERATION:
@@ -181,16 +189,28 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
                 float orientation[] = new float[3];
                 SensorManager.getOrientation(R, orientation);
                 azimut = orientation[0]; // orientation contains: azimut, pitch and roll
-                degrees = (float)azimut*180/3.14159f;
+                averageMagArray[teller] = azimut;
+                if (teller<(averageSize-1)){
+                    teller++;
+                }
+                else {
+                    teller=0;
+                }
+                averageMag=0;
+                for (int j=0; j<averageSize;j++){
+                    averageMag = averageMag + (averageMagArray[j]/averageSize);
+                }
+                degrees = (float)averageMag*180/3.14159f;
                //
                // tvAccelY.setText("angle : "+ String.format("%-3.6f",azimut) +" [radians]"));
               //  tvAccelZ.setText("Z : "+ String.format("%-3.6f",azimut*180/3.14159f) +" [degrees]"));
             }
         }
-        tvAccelX.setText("angle : "+ String.format("%-3.6f",azimut) +" [radians]");
+
+        tvAccelX.setText("angle : "+ String.format("%-3.6f",averageMag) +" [radians]");
        tvAccelY.setText("angle :" + String.format("%-3.6f", degrees)+ "[degrees]" + "offset:" + etOffset.getText().toString());
 
-        mCustomDrawableView.invalidate();
+       //mCustomDrawableView.invalidate();
     }
 
 

@@ -46,6 +46,8 @@
                 android:text="AccelZ"
                 android:id="@+id/accel_z_tv"
                 android:layout_marginBottom="8dp"/>
+
+                />
         </LinearLayout>
     </ScrollView>
 
