@@ -50,6 +50,7 @@ public class TouchImageView extends ImageView {
         sharedConstructing(context);
     }
 
+
     private void sharedConstructing(Context context) {
         super.setClickable(true);
 
@@ -61,6 +62,7 @@ public class TouchImageView extends ImageView {
         setScaleType(ScaleType.MATRIX);
         setOnTouchListener(new OnTouchListener() {
 
+
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 mScaleDetector.onTouchEvent(event);
@@ -68,12 +70,14 @@ public class TouchImageView extends ImageView {
 
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
+                        getParent().requestDisallowInterceptTouchEvent(true);
                         last.set(curr);
                         start.set(last);
                         mode = DRAG;
                         break;
 
                     case MotionEvent.ACTION_MOVE:
+                        getParent().requestDisallowInterceptTouchEvent(true);
                         if (mode == DRAG) {
                             float deltaX = curr.x - last.x;
                             float deltaY = curr.y - last.y;
@@ -108,6 +112,8 @@ public class TouchImageView extends ImageView {
     public void setMaxZoom(float x) {
         maxScale = x;
     }
+
+
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 
