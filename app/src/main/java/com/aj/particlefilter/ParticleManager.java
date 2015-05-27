@@ -78,21 +78,23 @@ public class ParticleManager {
                 destroyedParticles++;
                 destroyedPariclesArray[j]= i;
                 j++;
-            }
-            else{
+            }else{
                 activeParticles++;
+                particleArray[i].setParent(i);
                 activeParticlesArray[k] = i;
                 k++;
             }
         }
-            //give a destroyed particle a random position of an active particle and activate it again.
+
+        //give a destroyed particle a random position of an active particle and activate it again.
         for (int i=0; i<destroyedParticles; i++){
             j = destroyedPariclesArray[i];
-            int randomLocation = (int)Math.random()*activeParticles;
+            int randomLocation = (int)(Math.random()*activeParticles);
 
-                k = activeParticlesArray[randomLocation];
-                particleArray[j].setX(particleArray[k].getX());
-                particleArray[j].setY(particleArray[k].getY());
+                int l = activeParticlesArray[randomLocation];
+                particleArray[j].setX(particleArray[l].getX());
+                particleArray[j].setY(particleArray[l].getY());
+                particleArray[j].setParent(l);
                 particleArray[j].activate();
             }
     }

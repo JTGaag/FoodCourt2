@@ -21,6 +21,7 @@ public class Particle2 {
         this.y = yvalue;
         this.oldX = xvalue;
         this.oldY = yvalue;
+        this.parent = -1;
 
     }
 
@@ -93,5 +94,13 @@ public class Particle2 {
 
     public double getOldY() {
         return oldY;
+    }
+
+    public double getParent() {
+        return parent;
+    }
+
+    public void setParent(double parent) {
+        this.parent = parent;
     }
 }
