@@ -4,7 +4,6 @@ import com.aj.map.CollisionMap;
 import com.aj.map.LineSegment;
 import com.aj.map.RectangleMap;
 
-
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -13,8 +12,8 @@ import java.util.Random;
  */
 public class ParticleManager {
 
-    int nParticles = 10000; // nr. of particles
-    Particle2[] particleArray;
+    int nParticles = 100; // nr. of particles
+    Particle2 particleArray[];
     RectangleMap rectangleMap;
     CollisionMap collisionMap;
     double meanX = 0.0;
@@ -44,6 +43,7 @@ public class ParticleManager {
         }
         //initiateParticles();
         initateParticlesMap();
+        saveParticleData();
     }
 
     /**
@@ -55,8 +55,18 @@ public class ParticleManager {
      */
     public void moveAndDistribute(double meanDirection, double directionStd, double meanDistance, double distanceStd){
 
+        Particle2[] tempData = savedData.get(savedData.size()-1);
+//        for(Particle2 par: tempData){
+//            Log.d("Saved before move", "Valid: "+!par.isDestroyed());
+//        }
         moveParticles(meanDirection, directionStd, meanDistance, distanceStd);
+
+        Particle2[] tempData2 = savedData.get(savedData.size()-1);
+//        for(Particle2 par: tempData2){
+//            Log.d("Saved before dist", "Valid: "+!par.isDestroyed());
+//        }
         redistribute();
+
         saveParticleData();
 
     }
@@ -64,7 +74,6 @@ public class ParticleManager {
      * resample and redistribute the particles to keep
      */
     public void redistribute(){
-
         int activeParticles = 0;
         int[] activeParticlesArray = new int[nParticles];
         int destroyedParticles = 0;
@@ -74,42 +83,60 @@ public class ParticleManager {
 
         Particle2[] tempData = savedData.get(savedData.size()-1);
 
-
         //count the nr. of active and destroyed particles and find where they are
-        for (int i=0; i<nParticles;i++){
+        for (int i=0; i<nParticles; i++){
             if (particleArray[i].isDestroyed()){
                 destroyedParticles++;
                 destroyedParticlesArray[j]= i;
                 j++;
             }else{
                 activeParticles++;
-                particleArray[i].setParent(i);
                 activeParticlesArray[k] = i;
                 k++;
             }
         }
 
+//        //                destroyedParticles++;
+////                destroyedParticlesArray[j]= i;
+////                j++;
+//        int randomLocation = (int)(Math.random()*nParticles);
+//
+//        //Log.d("Random", "x: " + randomLocation);
+//        //Log.d("Valid random point", "valid: "+!tempData[randomLocation].isDestroyed());
+//
+//        particleArray[i].setX(tempData[randomLocation].getX());
+//        particleArray[i].setY(tempData[randomLocation].getY());
+//        particleArray[i].setParent(randomLocation);
+//        particleArray[i].activate();
+
         //give a destroyed particle a random position of an active particle and activate it again.
         for (int i=0; i<destroyedParticles; i++){
             j = destroyedParticlesArray[i];
 
+            int randomLocation = (int)(Math.random()*activeParticles);
+            int l = activeParticlesArray[randomLocation];
 
-            int randomLocation = (int)(Math.random()*nParticles);
-
-                int l = activeParticlesArray[randomLocation];
-                particleArray[j].setX(tempData[l].getX());
-                particleArray[j].setY(tempData[l].getY());
-                particleArray[j].setParent(l);
-                particleArray[j].activate();
-            }
+            particleArray[j].setX(particleArray[l].getX());
+            particleArray[j].setY(particleArray[l].getY());
+            particleArray[j].setParent(l);
+            particleArray[j].activate();
+        }
     }
 
     /**
      *
      */
     public void saveParticleData(){
+        Particle2 toSave[] = new Particle2[particleArray.length];
+        for(int i=0; i<particleArray.length; i++){
+            toSave[i] = new Particle2(particleArray[i]);
+        }
 
-        savedData.add(particleArray);
+        savedData.add(toSave);
+
+//        for(Particle2 par: toSave){
+//            Log.d("Save data", "Valid: "+!par.isDestroyed());
+//        }
 
         /*
         int iets = (savedData.size()-1);
@@ -157,7 +184,7 @@ public class ParticleManager {
     }
 
     public Particle2[] getParticleArray() {
-        return particleArray;
+        return savedData.get(savedData.size()-1);
     }
 
     /*

@@ -25,6 +25,11 @@ public class Particle2 {
 
     }
 
+    public Particle2(Particle2 old){
+        this.x = old.getX();
+        this.y = old.getY();
+    }
+
 
     public Particle2(double xvalue, double yvalue, double direction, double id, double distance, double parent){
 
@@ -41,6 +46,7 @@ public class Particle2 {
     public void setX(double x) {
         this.x = x;
     }
+
     public double getY() {
         return y;
     }

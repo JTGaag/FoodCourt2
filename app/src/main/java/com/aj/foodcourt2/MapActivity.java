@@ -40,6 +40,7 @@ public class MapActivity extends ActionBarActivity {
 
     EditText etDirection, etDistance;
     Button buttonMove;
+    Bitmap bg;
 
 
 
@@ -107,14 +108,14 @@ public class MapActivity extends ActionBarActivity {
         rectangleArrayList.add(new Rectangle(56, 8.2, 4, 6.1));//room3
         rectangleArrayList.add(new Rectangle(60, 8.2, 4, 6.1));//room4
 
-
+        bg = Bitmap.createBitmap(3700,1000, Bitmap.Config.ARGB_8888);
 
         rectangleMap = new RectangleMap(rectangleArrayList);
         rectangleMap.assignWeights();
 
         collisionMap = new CollisionMap(lineSegmentArrayList);
 
-        particleManager = new ParticleManager(50000, rectangleMap, collisionMap);
+        particleManager = new ParticleManager(10000, rectangleMap, collisionMap);
 
         particleArray = particleManager.getParticleArray();
 
@@ -145,7 +146,7 @@ public class MapActivity extends ActionBarActivity {
         paintCollision.setStrokeWidth(5.0f);
 
 
-        Bitmap bg = Bitmap.createBitmap(3700,1000, Bitmap.Config.ARGB_8888);
+
 
         Canvas canvas = new Canvas(bg);
         for (Rectangle rec : rectangleMap.getRectangles()){
@@ -175,7 +176,7 @@ public class MapActivity extends ActionBarActivity {
             public void onClick(View v) {
                 double direction = Double.parseDouble(etDirection.getText().toString());
                 double distance = Double.parseDouble(etDistance.getText().toString());
-                particleManager.moveAndDistribute(direction, 15, distance, distance/5);
+                particleManager.moveAndDistribute(direction, 15, distance, (distance / 10));
 
                 particleManager.calculateMean();
 
@@ -211,7 +212,7 @@ public class MapActivity extends ActionBarActivity {
                 paintMean.setStrokeWidth(10.0f);
 
 
-                Bitmap bg = Bitmap.createBitmap(3700,1000, Bitmap.Config.ARGB_8888);
+                bg.eraseColor(android.graphics.Color.TRANSPARENT);
 
                 Canvas canvas = new Canvas(bg);
                 for (Rectangle rec : rectangleMap.getRectangles()){
