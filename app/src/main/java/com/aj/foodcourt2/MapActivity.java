@@ -175,7 +175,7 @@ public class MapActivity extends ActionBarActivity {
             public void onClick(View v) {
                 double direction = Double.parseDouble(etDirection.getText().toString());
                 double distance = Double.parseDouble(etDistance.getText().toString());
-                particleManager.moveParticles(direction, 15, distance, distance/5);
+                particleManager.moveAndDistribute(direction, 15, distance, distance/5);
 
                 particleManager.calculateMean();
 

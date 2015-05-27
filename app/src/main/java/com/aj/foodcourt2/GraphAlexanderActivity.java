@@ -1,17 +1,25 @@
 package com.aj.foodcourt2;
 
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.LineGraphSeries;
 
 // http://www.codingforandroid.com/2011/01/using-orientation-sensors-simple.html
 public class GraphAlexanderActivity extends ActionBarActivity implements SensorEventListener{
@@ -30,7 +38,7 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
     Float degrees;
 
     float averageMag=0;
-    int averageSize=10;
+    int averageSize=100;
     float[] averageMagArray = new float[averageSize];
     int teller=0;
 
@@ -39,34 +47,34 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
 
     //CustomDrawableView mCustomDrawableView;
 
-//    public class CustomDrawableView extends View {
-//        Paint paint = new Paint();
-//        public CustomDrawableView(Context context) {
-//            super(context);
-//            paint.setColor(0xff00ff00);
-//            paint.setStyle(Paint.Style.STROKE);
-//            paint.setStrokeWidth(2);
-//            paint.setAntiAlias(true);
-//        };
-//
-//        protected void onDraw(Canvas canvas) {
-//            int width = 50;
-//            int height = 50;
-//            int centerx = width/2;
-//            int centery = height/2;
-//            // canvas.drawLine(centerx, 0, centerx, height, paint);
-//            // canvas.drawLine(0, centery, width, centery, paint);
-//            // Rotate the canvas with the azimut
-//            if (azimut != null)
-//                canvas.rotate(-azimut*180/3.14158f, centerx, centery);
-//            paint.setColor(0xff0000ff);
-//            canvas.drawLine(centerx, -25, centerx, +25, paint);
-//            //canvas.drawLine(-25, centery, 25, centery, paint);
-//            canvas.drawText("N", centerx+5, centery-10, paint);
-//            canvas.drawText("S", centerx-10, centery+15, paint);
-//            paint.setColor(0xff00ff00);
-//        }
-//    }
+    public class CustomDrawableView extends View {
+        Paint paint = new Paint();
+        public CustomDrawableView(Context context) {
+            super(context);
+            paint.setColor(0xff00ff00);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(2);
+            paint.setAntiAlias(true);
+        };
+
+        protected void onDraw(Canvas canvas) {
+            int width = 50;
+            int height = 50;
+            int centerx = width/2;
+            int centery = height/2;
+           // canvas.drawLine(centerx, 0, centerx, height, paint);
+           // canvas.drawLine(0, centery, width, centery, paint);
+            // Rotate the canvas with the azimut
+            if (azimut != null)
+                canvas.rotate(-azimut*180/3.14158f, centerx, centery);
+            paint.setColor(0xff0000ff);
+            canvas.drawLine(centerx, -25, centerx, +25, paint);
+            //canvas.drawLine(-25, centery, 25, centery, paint);
+            canvas.drawText("N", centerx+5, centery-10, paint);
+            canvas.drawText("S", centerx-10, centery+15, paint);
+            paint.setColor(0xff00ff00);
+        }
+    }
 
 
     @Override
@@ -77,7 +85,7 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
         tvAccelY = (TextView) findViewById(R.id.accel_y_tv);
         etOffset = (EditText) findViewById(R.id.editText_offset);
 
-        //mCustomDrawableView = (CustomDrawableView)findViewById(R.id.custom_drawable_view);
+        //  mCustomDrawableView = new CustomDrawableView(this);
         //setContentView(mCustomDrawableView);    // Register the sensor listeners
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
@@ -212,12 +220,24 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
                     // tvAccelY.setText("angle : "+ String.format("%-3.6f",azimut) +" [radians]"));
                     //  tvAccelZ.setText("Z : "+ String.format("%-3.6f",azimut*180/3.14159f) +" [degrees]"));
                 }
+                else {
+                    teller=0;
+                }
+                averageMag=0;
+                for (int j=0; j<averageSize;j++){
+                    averageMag = averageMag + (averageMagArray[j]/averageSize);
+                }
+                degrees = (float)averageMag*180/3.14159f;
+               //
+               // tvAccelY.setText("angle : "+ String.format("%-3.6f",azimut) +" [radians]"));
+              //  tvAccelZ.setText("Z : "+ String.format("%-3.6f",azimut*180/3.14159f) +" [degrees]"));
             }
         }
 
+        tvAccelX.setText("angle : "+ String.format("%-3.6f",averageMag) +" [radians]");
+       tvAccelY.setText("angle :" + String.format("%-3.6f", degrees)+ "[degrees]" + "offset:" + etOffset.getText().toString());
 
-
-        //mCustomDrawableView.invalidate();
+       //mCustomDrawableView.invalidate();
     }
 
 

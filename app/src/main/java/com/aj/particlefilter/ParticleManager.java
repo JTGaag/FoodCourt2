@@ -4,6 +4,7 @@ import com.aj.map.CollisionMap;
 import com.aj.map.LineSegment;
 import com.aj.map.RectangleMap;
 
+
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -19,8 +20,19 @@ public class ParticleManager {
     double meanX = 0.0;
     double meanY = 0.0;
 
+    private ArrayList<Particle2[]> savedData = new ArrayList<Particle2[]>();
+
+
+
+
     public static final double EPSILON = 0.0000001; //Real small value to check if crossproduct is very small (0 will not work do to rounding errors)
 
+    /**
+     *
+     * @param nParticles
+     * @param rectangleMap
+     * @param collisionMap
+     */
 
     public ParticleManager(int nParticles, RectangleMap rectangleMap, CollisionMap collisionMap) {
         this.nParticles = nParticles;
@@ -35,6 +47,20 @@ public class ParticleManager {
     }
 
     /**
+     *
+     * @param meanDirection
+     * @param directionStd
+     * @param meanDistance
+     * @param distanceStd
+     */
+    public void moveAndDistribute(double meanDirection, double directionStd, double meanDistance, double distanceStd){
+
+        moveParticles(meanDirection, directionStd, meanDistance, distanceStd);
+        redistribute();
+        saveParticleData();
+
+    }
+    /**
      * resample and redistribute the particles to keep
      */
     public void redistribute(){
@@ -42,15 +68,18 @@ public class ParticleManager {
         int activeParticles = 0;
         int[] activeParticlesArray = new int[nParticles];
         int destroyedParticles = 0;
-        int[] destroyedPariclesArray = new int[nParticles];
+        int[] destroyedParticlesArray = new int[nParticles];
         int j = 0;
         int k =0;
+
+        Particle2[] tempData = savedData.get(savedData.size()-1);
+
 
         //count the nr. of active and destroyed particles and find where they are
         for (int i=0; i<nParticles;i++){
             if (particleArray[i].isDestroyed()){
                 destroyedParticles++;
-                destroyedPariclesArray[j]= i;
+                destroyedParticlesArray[j]= i;
                 j++;
             }else{
                 activeParticles++;
@@ -62,15 +91,32 @@ public class ParticleManager {
 
         //give a destroyed particle a random position of an active particle and activate it again.
         for (int i=0; i<destroyedParticles; i++){
-            j = destroyedPariclesArray[i];
-            int randomLocation = (int)(Math.random()*activeParticles);
+            j = destroyedParticlesArray[i];
+
+
+            int randomLocation = (int)(Math.random()*nParticles);
 
                 int l = activeParticlesArray[randomLocation];
-                particleArray[j].setX(particleArray[l].getX());
-                particleArray[j].setY(particleArray[l].getY());
+                particleArray[j].setX(tempData[l].getX());
+                particleArray[j].setY(tempData[l].getY());
                 particleArray[j].setParent(l);
                 particleArray[j].activate();
             }
+    }
+
+    /**
+     *
+     */
+    public void saveParticleData(){
+
+        savedData.add(particleArray);
+
+        /*
+        int iets = (savedData.size()-1);
+        Particle2[] tempArray = savedData.get(iets);
+        tempArray[0].getX();
+        savedData.get(0);
+        */
     }
 
     public void initateParticlesMap(){
@@ -99,7 +145,7 @@ public class ParticleManager {
             double y2 = particleArray[i].getY();
             LineSegment moveLine = new LineSegment(x1, y1, x2, y2);
 
-            //Set destroyed partcles
+            //Set destroyed particles
             if(!particleArray[i].isDestroyed()){
                 for(LineSegment line: collisionMap.getLineSegments()){
                     if(doLinesIntersect(moveLine, line)){
