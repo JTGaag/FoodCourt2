@@ -7,6 +7,7 @@ import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -174,7 +175,9 @@ public class MapActivity extends ActionBarActivity {
             public void onClick(View v) {
                 double direction = Double.parseDouble(etDirection.getText().toString());
                 double distance = Double.parseDouble(etDistance.getText().toString());
-                particleManager.moveParticles(direction, 20, distance, distance/5);
+                particleManager.moveParticles(direction, 15, distance, distance/5);
+
+                particleManager.calculateMean();
 
 
                 Paint paint = new Paint();
@@ -202,6 +205,11 @@ public class MapActivity extends ActionBarActivity {
                 paintMove.setStyle(Paint.Style.FILL);
                 paintMove.setStrokeWidth(2.0f);
 
+                Paint paintMean = new Paint();
+                paintMean.setColor(Color.rgb(0, 155, 155));
+                paintMean.setStyle(Paint.Style.FILL);
+                paintMean.setStrokeWidth(10.0f);
+
 
                 Bitmap bg = Bitmap.createBitmap(3700,1000, Bitmap.Config.ARGB_8888);
 
@@ -225,6 +233,9 @@ public class MapActivity extends ActionBarActivity {
                 for(LineSegment line: collisionMap.getLineSegments()){
                     canvas.drawLine((float) line.getX1() * 50, (float) line.getY1() * 50, (float) line.getX2() * 50, (float) line.getY2() * 50, paintCollision);
                 }
+
+                canvas.drawPoint((float)(particleManager.getMeanX()*50), (float)(particleManager.getMeanY()*50), paintMean);
+                Log.d("Mean values","x: "+particleManager.getMeanX()+" y:"+particleManager.getMeanY());
 
 
                 //noinspection deprecation
