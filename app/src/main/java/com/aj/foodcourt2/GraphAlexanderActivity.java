@@ -90,7 +90,6 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
         //Initiate sensors
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         magneticSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
@@ -104,7 +103,7 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
     protected void onResume() {
         super.onResume();
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
-        sensorManager.registerListener(this, gravitySensor, SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(this, gravitySensor, 10000);
         sensorManager.registerListener(this, magneticSensor, 10000);
     }
 
@@ -177,6 +176,8 @@ public class GraphAlexanderActivity extends ActionBarActivity implements SensorE
                 break;
 
         }*/
+
+
         if (event.sensor.getType() == Sensor.TYPE_GRAVITY)
             mGravity = event.values;
         if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {

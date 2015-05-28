@@ -53,6 +53,10 @@
             android:name=".MapActivity"
             android:label="@string/title_activity_map" >
         </activity>
+        <activity
+            android:name=".CombinedActivity"
+            android:label="@string/title_activity_combined" >
+        </activity>
     </application>
 
 </manifest>

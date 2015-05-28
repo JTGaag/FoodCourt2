@@ -56,6 +56,14 @@ public class QueuingDataHandler {
 
 
     //Constructor for Handler also run initiation method
+
+    /**
+     *
+     * @param queuingListener
+     * @param pointsPerSegment
+     * @param segmentsPerBoundary
+     * @param segmentsPerBody
+     */
     public QueuingDataHandler(QueuingListener queuingListener, int pointsPerSegment, int segmentsPerBoundary, int segmentsPerBody) {
         this.queuingListener = queuingListener;
         this.pointsPerSegment = pointsPerSegment;
@@ -151,6 +159,7 @@ public class QueuingDataHandler {
     }
 
     private void copyDataBuffer(){
+        //TODO: maak deep copy
         rawDataBuffer = rawData.clone();
         for(int i=0; i<(pointsPerBoundary*2); i++){
             rawData[i] = rawDataBuffer[rawDataSize-(pointsPerBoundary*2)-1+i];
