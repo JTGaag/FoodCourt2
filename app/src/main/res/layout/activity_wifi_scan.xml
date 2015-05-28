@@ -7,6 +7,30 @@
     android:orientation="vertical"
     tools:context="com.aj.foodcourt.WifiScanActivity">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/z_rotation"
+        android:text="rotation: [degrees/s]"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/min_z_rotation"
+        android:text="Min rotation: [degrees/s]"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/max_z_rotation"
+        android:text="max rotation: [degrees/s]"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/rotation"
+        android:text="Rotation last second: [degrees]"/>
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

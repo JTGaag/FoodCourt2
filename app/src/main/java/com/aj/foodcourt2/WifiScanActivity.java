@@ -4,6 +4,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -15,12 +19,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.util.Arrays;
 import java.util.List;
 
 
-public class WifiScanActivity extends ActionBarActivity {
+public class WifiScanActivity extends ActionBarActivity implements SensorEventListener{
 
-    TextView tvScanDetail;
+    TextView tvScanDetail, tvZRotation, tvZMaxRotation, tvZMinRotation, tvRotation;
     Button buttonScanWifi;
     WifiManager wifiManager;
     WifiReceiver wifiReceiver;
@@ -28,12 +33,31 @@ public class WifiScanActivity extends ActionBarActivity {
     StringBuilder stringBuilder = new StringBuilder();
     long scanStartTime;
 
+    final double NS2S = 1.0/1000000000.0;
+
+    SensorManager sensorManager;
+    Sensor gyroSensor;
+
+    int nBuffer = 100;
+    double rotArray[] = new double[nBuffer];
+    int bufferIndex = 0;
+
+    long lastTime = 0;
+    int nSum = 60;
+    double sumRot = 0;
+    int sumIndex = 0;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wifi_scan);
 
         tvScanDetail = (TextView) findViewById(R.id.scan_detail_tv);
+        tvZRotation = (TextView) findViewById(R.id.z_rotation);
+        tvZMaxRotation = (TextView) findViewById(R.id.max_z_rotation);
+        tvZMinRotation = (TextView) findViewById(R.id.min_z_rotation);
+        tvRotation = (TextView) findViewById(R.id.rotation);
         buttonScanWifi = (Button) findViewById(R.id.button_scan_wifi);
 
         buttonScanWifi.setOnClickListener(new View.OnClickListener() {
@@ -51,6 +75,11 @@ public class WifiScanActivity extends ActionBarActivity {
         registerReceiver(wifiReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
         //wifiManager.startScan();
         tvScanDetail.setText("\nStarting Scan...\n");
+
+        sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+
+
 
 
     }
@@ -88,8 +117,10 @@ public class WifiScanActivity extends ActionBarActivity {
      */
     @Override
     protected void onResume() {
-        registerReceiver(wifiReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
         super.onResume();
+        registerReceiver(wifiReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        sensorManager.registerListener(this, gyroSensor, 50000);
+
     }
 
     /**
@@ -97,8 +128,85 @@ public class WifiScanActivity extends ActionBarActivity {
      */
     @Override
     protected void onPause() {
-        unregisterReceiver(wifiReceiver);
         super.onPause();
+        unregisterReceiver(wifiReceiver);
+        sensorManager.unregisterListener(this);
+    }
+
+    /**
+     * Called when sensor values have changed.
+     * <p>See {@link SensorManager SensorManager}
+     * for details on possible sensor types.
+     * <p>See also {@link SensorEvent SensorEvent}.
+     * <p/>
+     * <p><b>NOTE:</b> The application doesn't own the
+     * {@link SensorEvent event}
+     * object passed as a parameter and therefore cannot hold on to it.
+     * The object may be part of an internal pool and may be reused by
+     * the framework.
+     *
+     * @param event the {@link SensorEvent SensorEvent}.
+     */
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        Sensor sensor = event.sensor;
+        double xRot, yRot, zRot, zMax;
+        long timestamp = event.timestamp;
+        if(lastTime==0){
+            lastTime = timestamp;
+        }
+
+        switch (sensor.getType()){
+            case Sensor.TYPE_GYROSCOPE:
+                long timeDif = timestamp - lastTime;
+                lastTime = timestamp;
+                double timeDifS = timeDif * NS2S;
+
+                //Log.d("TimedifS", "TimedifS: "+timeDifS);
+
+                zRot = event.values[2]; //Rotation arround the z axis
+                zRot = zRot *180 / Math.PI;
+                tvZRotation.setText("Rotation (z-axis): " + String.format("%-3.1f",zRot) + " [Degrees/s]");
+
+                //Save in buffer
+                rotArray[bufferIndex] = zRot;
+                bufferIndex++;
+                if(bufferIndex==nBuffer){
+                    bufferIndex = 0;
+                    Arrays.sort(rotArray);
+                    zMax = rotArray[nBuffer-1];
+                    tvZMaxRotation.setText("Max rotation (z-axis): " + String.format("%-3.1f",zMax) + " [Degrees/s]");
+                    tvZMinRotation.setText("Min rotation (z-axis): " + String.format("%-3.1f",zMax) + " [Degrees/s]");
+                }
+
+                sumRot += (zRot * timeDifS);
+                sumIndex++;
+                if(sumIndex == nSum){
+                    sumIndex = 0;
+                    tvRotation.setText("Rotation last second: " + String.format("%-3.1f",sumRot) + " [Degrees]");
+
+                    sumRot = 0;
+                }
+
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
+     * Called when the accuracy of the registered sensor has changed.
+     * <p/>
+     * <p>See the SENSOR_STATUS_* constants in
+     * {@link SensorManager SensorManager} for details.
+     *
+     * @param sensor
+     * @param accuracy The new accuracy of this sensor, one of
+     *                 {@code SensorManager.SENSOR_STATUS_*}
+     */
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
     }
 
     class WifiReceiver extends BroadcastReceiver {
@@ -123,7 +231,7 @@ public class WifiScanActivity extends ActionBarActivity {
          * return a result to you asynchronously -- in particular, for interacting
          * with services, you should use
          * {@link Context#startService(Intent)} instead of
-         * {@link Context#bindService(Intent, ServiceConnection, int)}.  If you wish
+         * {@link Context#/bindService(Intent, /ServiceConnection, int)}.  If you wish
          * to interact with a service that is already running, you can use
          * {@link #peekService}.
          * <p/>
@@ -146,7 +254,7 @@ public class WifiScanActivity extends ActionBarActivity {
             stringBuilder.append("\n\n");
             for(int i=0; i<wifiList.size(); i++){
                 stringBuilder.append(new Integer(i+1).toString() + ": ");
-                stringBuilder.append(wifiList.get(i).SSID + " . " + WifiManager.calculateSignalLevel(wifiList.get(i).level, 255) + " . " + wifiList.get(i).frequency);
+                stringBuilder.append(wifiList.get(i).BSSID + " : " + wifiList.get(i).SSID + " . " + WifiManager.calculateSignalLevel(wifiList.get(i).level, 255) + " . " + wifiList.get(i).frequency);
                 //stringBuilder.append(wifiList.get(i).toString());
                 stringBuilder.append("\n\n");
             }
