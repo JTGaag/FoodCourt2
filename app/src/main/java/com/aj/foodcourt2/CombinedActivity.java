@@ -40,7 +40,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     private Sensor gravitySensor;
     private Sensor magneticSensor;
     private Sensor accelerometerSensor;
-
+    private Sensor gyroSensor;
 
     //magnetometer
     float[] mGravity;
@@ -48,6 +48,9 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     float azimut;
     float degrees;
     private TextView tvAzimut, tvAzimutDegrees, tvSteps;
+
+    //Constants
+    final double NS2S = 1.0/1000000000.0;
 
     //map
     ArrayList<Rectangle> rectangleArrayList = new ArrayList<Rectangle>();
@@ -91,6 +94,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         magneticSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
 
         //TextViews
         tvAzimut = (TextView) findViewById(R.id.tv_azimut);
@@ -121,27 +125,8 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         //Get the array of current particles
         particleArray = particleManager.getParticleArray();
 
-
-        //Set Paints
-        paint.setColor(Color.rgb(0, 0, 0));
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(5.0f);
-
-        paintDot.setColor(Color.rgb(51, 128, 51));
-        paintDot.setStyle(Paint.Style.FILL);
-        paintDot.setStrokeWidth(5.0f);
-
-        paintDotDestroy.setColor(Color.rgb(255,51,51));
-        paintDotDestroy.setStyle(Paint.Style.FILL);
-        paintDotDestroy.setStrokeWidth(2.0f);
-
-        paintCollision.setColor(Color.rgb(255,51,255));
-        paintCollision.setStyle(Paint.Style.FILL);
-        paintCollision.setStrokeWidth(5.0f);
-
-        paintMean.setColor(Color.rgb(0, 155, 155));
-        paintMean.setStyle(Paint.Style.FILL);
-        paintMean.setStrokeWidth(10.0f);
+        //Set paitns
+        setPaints();
 
         mImage = (TouchImageView) findViewById(R.id.floor_map_zoom);
         mImage.setMaxZoom(8f);
@@ -169,6 +154,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         mImage.setImageBitmap(bg);
 
 
+        //Move particle button (manual particle movement)
         buttonMove.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -221,6 +207,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         sensorManager.registerListener(this, gravitySensor, 10000);
         sensorManager.registerListener(this, magneticSensor, 10000);
         sensorManager.registerListener(this, accelerometerSensor, 10000);
+        sensorManager.registerListener(this, gyroSensor, 10000);
     }
 
     @Override
@@ -303,6 +290,11 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                 y = sensorEvent.values[1];
                 z = sensorEvent.values[2];
                 queuingDataHandler.addRawData(new QueuingSensorData(timestamp, x, y,z, currentGravityX, currentGravityY, currentGravityZ));
+
+                break;
+            case Sensor.TYPE_GYROSCOPE:
+
+
 
                 break;
             default:
@@ -389,5 +381,28 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         rectangleArrayList.add(new Rectangle(12, 11.3, 4, 3));//coffeeroom
         rectangleArrayList.add(new Rectangle(56, 8.2, 4, 6.1));//room3
         rectangleArrayList.add(new Rectangle(60, 8.2, 4, 6.1));//room4
+    }
+
+    protected void setPaints(){
+        //Set Paints
+        paint.setColor(Color.rgb(0, 0, 0));
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(5.0f);
+
+        paintDot.setColor(Color.rgb(51, 128, 51));
+        paintDot.setStyle(Paint.Style.FILL);
+        paintDot.setStrokeWidth(5.0f);
+
+        paintDotDestroy.setColor(Color.rgb(255,51,51));
+        paintDotDestroy.setStyle(Paint.Style.FILL);
+        paintDotDestroy.setStrokeWidth(2.0f);
+
+        paintCollision.setColor(Color.rgb(255,51,255));
+        paintCollision.setStyle(Paint.Style.FILL);
+        paintCollision.setStrokeWidth(5.0f);
+
+        paintMean.setColor(Color.rgb(0, 255, 255));
+        paintMean.setStyle(Paint.Style.FILL);
+        paintMean.setStrokeWidth(10.0f);
     }
 }
