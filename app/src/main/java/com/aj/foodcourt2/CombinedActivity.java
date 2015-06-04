@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.drawable.BitmapDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -18,7 +17,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.aj.map.CollisionMap;
@@ -42,8 +40,6 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     private Sensor gravitySensor;
     private Sensor magneticSensor;
     private Sensor accelerometerSensor;
-    private Sensor lightSensor;
-    private Sensor proximitySensor;
 
 
     //magnetometer
@@ -58,21 +54,32 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     ArrayList<LineSegment> lineSegmentArrayList = new ArrayList<LineSegment>();
     RectangleMap rectangleMap;
     CollisionMap collisionMap;
-    LinearLayout li;
     ParticleManager particleManager;
     Particle2[] particleArray;
 
+    //Image to display floor map and particles
     TouchImageView mImage;
 
+    //Stuff
     EditText etDirection, etDistance;
     Button buttonMove;
     Bitmap bg;
 
+    //Variables to save gravity data
     private double currentGravityX = 0;
     private double currentGravityY = 0;
     private double currentGravityZ = -9;
 
+    //QDH to be used to analyse acceleration data and output step information and quining information
     private QueuingDataHandler queuingDataHandler;
+
+
+    //Paints
+    Paint paint = new Paint();
+    Paint paintDot = new Paint();
+    Paint paintDotDestroy = new Paint();
+    Paint paintCollision = new Paint();
+    Paint paintMean = new Paint();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,18 +91,248 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         magneticSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
-        proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
 
+        //TextViews
         tvAzimut = (TextView) findViewById(R.id.tv_azimut);
         tvAzimutDegrees = (TextView) findViewById(R.id.tv_azimut_degrees);
         tvSteps = (TextView) findViewById(R.id.tv_steps);
 
+        //Input objects
         etDirection = (EditText)findViewById(R.id.editText_direction_combined);
         etDistance = (EditText)findViewById(R.id.editText_distance_combined);
         buttonMove = (Button)findViewById(R.id.button_move_combined);
 
-        //Line Segments
+        //Make maps to be used for distribution and collision
+        makeMaps();
+
+        //Init bitmap
+        bg = Bitmap.createBitmap(3700,1000, Bitmap.Config.ARGB_8888);
+
+        //Make rectangle map
+        rectangleMap = new RectangleMap(rectangleArrayList);
+        rectangleMap.assignWeights();
+
+        //init COllison Map
+        collisionMap = new CollisionMap(lineSegmentArrayList);
+
+        //initialize particle manager
+        particleManager = new ParticleManager(10000, rectangleMap, collisionMap, getApplicationContext());
+
+        //Get the array of current particles
+        particleArray = particleManager.getParticleArray();
+
+
+        //Set Paints
+        paint.setColor(Color.rgb(0, 0, 0));
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(5.0f);
+
+        paintDot.setColor(Color.rgb(51, 128, 51));
+        paintDot.setStyle(Paint.Style.FILL);
+        paintDot.setStrokeWidth(5.0f);
+
+        paintDotDestroy.setColor(Color.rgb(255,51,51));
+        paintDotDestroy.setStyle(Paint.Style.FILL);
+        paintDotDestroy.setStrokeWidth(2.0f);
+
+        paintCollision.setColor(Color.rgb(255,51,255));
+        paintCollision.setStyle(Paint.Style.FILL);
+        paintCollision.setStrokeWidth(5.0f);
+
+        paintMean.setColor(Color.rgb(0, 155, 155));
+        paintMean.setStyle(Paint.Style.FILL);
+        paintMean.setStrokeWidth(10.0f);
+
+        mImage = (TouchImageView) findViewById(R.id.floor_map_zoom);
+        mImage.setMaxZoom(8f);
+
+
+        Canvas canvas = new Canvas(bg);
+        for (Rectangle rec : rectangleMap.getRectangles()){
+            canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paint);
+        }
+
+        for(Particle2 particle : particleArray){
+            if(!particle.isDestroyed()) {
+                canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDot);
+            }else{
+                //canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDotDestroy);
+            }
+        }
+
+        for(LineSegment line: collisionMap.getLineSegments()){
+            canvas.drawLine((float)line.getX1()*50,(float)line.getY1()*50, (float)line.getX2()*50, (float)line.getY2()*50, paintCollision);
+        }
+
+
+        //noinspection deprecation
+        mImage.setImageBitmap(bg);
+
+
+        buttonMove.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                double direction = Double.parseDouble(etDirection.getText().toString());
+                double distance = Double.parseDouble(etDistance.getText().toString());
+                particleManager.moveAndDistribute(direction, 15, distance, (distance / 10));
+
+                particleManager.calculateMean();
+
+                bg.eraseColor(android.graphics.Color.TRANSPARENT);
+
+                Canvas canvas = new Canvas(bg);
+                for (Rectangle rec : rectangleMap.getRectangles()) {
+                    canvas.drawRect((float) (rec.getX() * 50), (float) (rec.getY() * 50), (float) ((rec.getX() + rec.getWidth()) * 50), (float) ((rec.getY() + rec.getHeight()) * 50), paint);
+                }
+
+                Particle2[] tmpParticleArray = particleManager.getParticleArray();
+
+                for (Particle2 particle : tmpParticleArray) {
+                    //canvas.drawLine((float) particle.getOldX() * 50, (float) particle.getOldY() * 50, (float) particle.getX() * 50, (float) particle.getY() * 50, paintMove);
+                    if (!particle.isDestroyed()) {
+                        canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDot);
+                    } else {
+                        //canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDotDestroy);
+                    }
+
+                }
+
+                for (LineSegment line : collisionMap.getLineSegments()) {
+                    canvas.drawLine((float) line.getX1() * 50, (float) line.getY1() * 50, (float) line.getX2() * 50, (float) line.getY2() * 50, paintCollision);
+                }
+
+                canvas.drawPoint((float) (particleManager.getMeanX() * 50), (float) (particleManager.getMeanY() * 50), paintMean);
+                //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
+
+
+                //noinspection deprecation
+                mImage.setImageBitmap(bg);
+            }
+        });
+
+        queuingDataHandler = new QueuingDataHandler(this, 50, 3, 7);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        //Register all sensor listners
+        sensorManager.registerListener(this, gravitySensor, 10000);
+        sensorManager.registerListener(this, magneticSensor, 10000);
+        sensorManager.registerListener(this, accelerometerSensor, 10000);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        //Unregister sensor listeners
+        //TODO: if sensor acrivities are done in a service, look again at this. This may break the sensors in the service
+        sensorManager.unregisterListener(this);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_combined, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+
+        //Variables used in this method
+        Sensor sensor = sensorEvent.sensor;
+        double x, y, z;
+        long timestamp;
+
+
+        //Switch over sensor type to do corresponding actions for the selected sensor type
+        switch (sensor.getType()){
+
+            case Sensor.TYPE_GRAVITY:
+                //Save gravity values in variable to be used for step detection and for magnetic calculation
+                mGravity = sensorEvent.values;
+                currentGravityX = sensorEvent.values[0];
+                currentGravityY = sensorEvent.values[1];
+                currentGravityZ = sensorEvent.values[2];
+                break;
+
+            case Sensor.TYPE_MAGNETIC_FIELD:
+
+                //Calculate magnetic direction using gravity data and magnetic data
+                mGeomagnetic = sensorEvent.values;
+                if (mGravity != null && mGeomagnetic != null) {
+                    float R[] = new float[9];
+                    float I[] = new float[9];
+                    boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+                    if (success) {
+                        float orientation[] = new float[3];
+                        SensorManager.getOrientation(R, orientation);
+                        azimut = orientation[0]; // orientation contains: azimut, pitch and roll
+                        degrees = (float) azimut * 180 / (float) Math.PI;
+
+                        tvAzimut.setText("azimut: " + String.format("%-3.3f",azimut) + " [radians]");
+                        tvAzimutDegrees.setText("degrees: " + String.format("%-3.1f",degrees) + "[degrees]");
+
+                    }
+                }
+
+                break;
+            case Sensor.TYPE_ACCELEROMETER:
+
+                //Use accelerometer data in combination with gravity data to detect steps. Sending it to the QDH
+                timestamp = sensorEvent.timestamp;
+                x = sensorEvent.values[0];
+                y = sensorEvent.values[1];
+                z = sensorEvent.values[2];
+                queuingDataHandler.addRawData(new QueuingSensorData(timestamp, x, y,z, currentGravityX, currentGravityY, currentGravityZ));
+
+                break;
+            default:
+                break;
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+
+    }
+
+    @Override
+    public void onNewDataBlock(int count, QueuingSensorData[] dataArray, MacroBlockObject blockObject) {
+        tvSteps.setText("number of steps: " + count);
+    }
+
+    @Override
+    public void onStepCount(ArrayList<Long> timeOfSteps) {
+        Log.d("Steps", "Number of steps: " + timeOfSteps.size());
+        for(long time: timeOfSteps){
+        }
+    }
+
+    protected void makeMaps(){
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //Collision Map
+        //
+        ////////////////////////////////////////////////////////////////////////
         lineSegmentArrayList.add(new LineSegment(0, 0, 8, 0));//conference room 1
         lineSegmentArrayList.add(new LineSegment(0, 0, 0, 6.1));//conference room 2
         lineSegmentArrayList.add(new LineSegment(8, 0, 8, 6.1));//conference room 3
@@ -139,7 +376,11 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         lineSegmentArrayList.add(new LineSegment(60, 8.2, 61.5, 8.2));//room4/hall 36
         lineSegmentArrayList.add(new LineSegment(62.5, 8.2, 64, 8.2));//room4/hall 37
 
-        //Make map
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //Rectangle (room) map
+        //
+        ////////////////////////////////////////////////////////////////////////
         rectangleArrayList.add(new Rectangle(0, 0, 8, 6.1));//conference room
         rectangleArrayList.add(new Rectangle(0, 6.1, 72, 2.1));//halway
         rectangleArrayList.add(new Rectangle(12, 0, 4, 6.1));//room1
@@ -148,255 +389,5 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         rectangleArrayList.add(new Rectangle(12, 11.3, 4, 3));//coffeeroom
         rectangleArrayList.add(new Rectangle(56, 8.2, 4, 6.1));//room3
         rectangleArrayList.add(new Rectangle(60, 8.2, 4, 6.1));//room4
-
-        bg = Bitmap.createBitmap(3700,1000, Bitmap.Config.ARGB_8888);
-
-        rectangleMap = new RectangleMap(rectangleArrayList);
-        rectangleMap.assignWeights();
-
-        collisionMap = new CollisionMap(lineSegmentArrayList);
-
-        particleManager = new ParticleManager(10000, rectangleMap, collisionMap, getApplicationContext());
-
-        particleArray = particleManager.getParticleArray();
-
-        li = (LinearLayout) findViewById(R.id.floor_map);
-
-        mImage = (TouchImageView) findViewById(R.id.floor_map_zoom);
-        mImage.setMaxZoom(8f);
-
-
-        Paint paint = new Paint();
-        paint.setColor(Color.rgb(0, 0, 0));
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(5.0f);
-
-        Paint paintDot = new Paint();
-        paintDot.setColor(Color.rgb(51, 128, 51));
-        paintDot.setStyle(Paint.Style.FILL);
-        paintDot.setStrokeWidth(5.0f);
-
-        Paint paintDotDestroy = new Paint();
-        paintDotDestroy.setColor(Color.rgb(255,51,51));
-        paintDotDestroy.setStyle(Paint.Style.FILL);
-        paintDotDestroy.setStrokeWidth(2.0f);
-
-        Paint paintCollision = new Paint();
-        paintCollision.setColor(Color.rgb(255,51,255));
-        paintCollision.setStyle(Paint.Style.FILL);
-        paintCollision.setStrokeWidth(5.0f);
-
-
-
-
-        Canvas canvas = new Canvas(bg);
-        for (Rectangle rec : rectangleMap.getRectangles()){
-            canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paint);
-        }
-
-        for(Particle2 particle : particleArray){
-            if(!particle.isDestroyed()) {
-                canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDot);
-            }else{
-                //canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDotDestroy);
-            }
-        }
-
-        for(LineSegment line: collisionMap.getLineSegments()){
-            canvas.drawLine((float)line.getX1()*50,(float)line.getY1()*50, (float)line.getX2()*50, (float)line.getY2()*50, paintCollision);
-        }
-
-
-        //noinspection deprecation
-        li.setBackgroundDrawable(new BitmapDrawable(bg));
-        mImage.setImageBitmap(bg);
-
-
-        buttonMove.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                double direction = Double.parseDouble(etDirection.getText().toString());
-                double distance = Double.parseDouble(etDistance.getText().toString());
-                particleManager.moveAndDistribute(direction, 15, distance, (distance / 10));
-
-                particleManager.calculateMean();
-
-
-                Paint paint = new Paint();
-                paint.setColor(Color.rgb(0, 0, 0));
-                paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth(5.0f);
-
-                Paint paintDot = new Paint();
-                paintDot.setColor(Color.rgb(51, 128, 51));
-                paintDot.setStyle(Paint.Style.FILL);
-                paintDot.setStrokeWidth(5.0f);
-
-                Paint paintDotDestroy = new Paint();
-                paintDotDestroy.setColor(Color.rgb(255, 51, 51));
-                paintDotDestroy.setStyle(Paint.Style.FILL);
-                paintDotDestroy.setStrokeWidth(2.0f);
-
-                Paint paintCollision = new Paint();
-                paintCollision.setColor(Color.rgb(255, 51, 255));
-                paintCollision.setStyle(Paint.Style.FILL);
-                paintCollision.setStrokeWidth(5.0f);
-
-                Paint paintMove = new Paint();
-                paintMove.setColor(Color.rgb(0, 51, 255));
-                paintMove.setStyle(Paint.Style.FILL);
-                paintMove.setStrokeWidth(2.0f);
-
-                Paint paintMean = new Paint();
-                paintMean.setColor(Color.rgb(0, 155, 155));
-                paintMean.setStyle(Paint.Style.FILL);
-                paintMean.setStrokeWidth(10.0f);
-
-
-                bg.eraseColor(android.graphics.Color.TRANSPARENT);
-
-                Canvas canvas = new Canvas(bg);
-                for (Rectangle rec : rectangleMap.getRectangles()) {
-                    canvas.drawRect((float) (rec.getX() * 50), (float) (rec.getY() * 50), (float) ((rec.getX() + rec.getWidth()) * 50), (float) ((rec.getY() + rec.getHeight()) * 50), paint);
-                }
-
-                Particle2[] tmpParticleArray = particleManager.getParticleArray();
-
-                for (Particle2 particle : tmpParticleArray) {
-                    //canvas.drawLine((float) particle.getOldX() * 50, (float) particle.getOldY() * 50, (float) particle.getX() * 50, (float) particle.getY() * 50, paintMove);
-                    if (!particle.isDestroyed()) {
-                        canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDot);
-                    } else {
-                        //canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDotDestroy);
-                    }
-
-                }
-
-                for (LineSegment line : collisionMap.getLineSegments()) {
-                    canvas.drawLine((float) line.getX1() * 50, (float) line.getY1() * 50, (float) line.getX2() * 50, (float) line.getY2() * 50, paintCollision);
-                }
-
-                canvas.drawPoint((float) (particleManager.getMeanX() * 50), (float) (particleManager.getMeanY() * 50), paintMean);
-                //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
-
-
-                //noinspection deprecation
-                li.setBackgroundDrawable(new BitmapDrawable(bg));
-                mImage.setImageBitmap(bg);
-            }
-        });
-
-        queuingDataHandler = new QueuingDataHandler(this, 50, 3, 7);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        sensorManager.registerListener(this, gravitySensor, 10000);
-        sensorManager.registerListener(this, magneticSensor, 10000);
-        sensorManager.registerListener(this, accelerometerSensor, 10000);
-        sensorManager.registerListener(this, gravitySensor, 10000);
-        sensorManager.registerListener(this, lightSensor, 10000);
-        sensorManager.registerListener(this, proximitySensor, 10000);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        sensorManager.unregisterListener(this);
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_combined, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent sensorEvent) {
-
-        Sensor sensor = sensorEvent.sensor;
-        double x, y, z;
-        long timestamp;
-
-
-        switch (sensor.getType()){
-
-            case Sensor.TYPE_GRAVITY:
-                mGravity = sensorEvent.values;
-                currentGravityX = sensorEvent.values[0];
-                currentGravityY = sensorEvent.values[1];
-                currentGravityZ = sensorEvent.values[2];
-                break;
-
-            case Sensor.TYPE_MAGNETIC_FIELD:
-
-                mGeomagnetic = sensorEvent.values;
-                if (mGravity != null && mGeomagnetic != null) {
-                    float R[] = new float[9];
-                    float I[] = new float[9];
-                    boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
-                    if (success) {
-                        float orientation[] = new float[3];
-                        SensorManager.getOrientation(R, orientation);
-                        azimut = orientation[0]; // orientation contains: azimut, pitch and roll
-                        degrees = (float) azimut * 180 / (float) Math.PI;
-
-                        tvAzimut.setText("azimut: " + String.format("%-3.3f",azimut) + " [radians]");
-                        tvAzimutDegrees.setText("degrees: " + String.format("%-3.1f",degrees) + "[degrees]");
-
-                    }
-                }
-
-                break;
-            case Sensor.TYPE_ACCELEROMETER:
-
-                timestamp = sensorEvent.timestamp;
-                x = sensorEvent.values[0];
-                y = sensorEvent.values[1];
-                z = sensorEvent.values[2];
-                queuingDataHandler.addRawData(new QueuingSensorData(timestamp, x, y,z, currentGravityX, currentGravityY, currentGravityZ));
-
-
-                break;
-            default:
-                break;
-        }
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-
-    }
-
-    @Override
-    public void onNewDataBlock(int count, QueuingSensorData[] dataArray, MacroBlockObject blockObject) {
-        tvSteps.setText("number of steps: " + count);
-        //Log.d("Steps", "Number of steps: " + count);
-    }
-
-    @Override
-    public void onStepCount(ArrayList<Long> timeOfSteps) {
-        Log.d("Steps", "Number of steps: "+ timeOfSteps.size());
-        for(long time: timeOfSteps){
-        }
     }
 }
