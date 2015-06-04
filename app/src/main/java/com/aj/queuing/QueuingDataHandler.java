@@ -2,6 +2,7 @@ package com.aj.queuing;
 
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -34,6 +35,9 @@ public class QueuingDataHandler {
     //Storage arrays
     private QueuingSensorData[] rawData;
     private QueuingSensorData[] rawDataBuffer;
+
+    //Step time listArray
+    private ArrayList<Long> timeOfSteps = new ArrayList<Long>();
 
     //Pointers
     private int rawDataPointer = 0;
@@ -115,8 +119,11 @@ public class QueuingDataHandler {
                         copyDataBuffer();
                         calculateGravityShift();
                         calculateSteps();
-                        queuingListener.onStepCount(stepCount);
-                        //queuingListener.onNewDataBlock(stepCount,rawDataBuffer);
+
+                        //Send steps
+                        queuingListener.onStepCount(timeOfSteps);
+
+
                         rawDataPointer = pointsPerBoundary*2;
                         currentState = State.OPERATIONAL;
                     }
@@ -135,10 +142,14 @@ public class QueuingDataHandler {
                         long startTime = System.currentTimeMillis();
                         calculateGravityShift();
                         calculateSteps();
+
+                        //Send steps
+                        queuingListener.onStepCount(timeOfSteps);
+
+                        //Send block data
                         MacroBlockObject currentBlock = generateBlock();
-                        //queuingListener.onStepCount(stepCount);
                         QueuingSensorData[] analysedData = Arrays.copyOfRange(rawDataBuffer,pointsPerBoundary,(rawDataSize-pointsPerBoundary));
-                        queuingListener.onNewDataBlock(stepCount, analysedData,currentBlock);
+                        queuingListener.onNewDataBlock(stepCount, analysedData, currentBlock);
                         rawDataPointer = pointsPerBoundary*2;
                         currentState = State.OPERATIONAL;
                     }
@@ -187,6 +198,9 @@ public class QueuingDataHandler {
      * Method to calculate steps, starting to look in the analyse data segemnts, but editing data in the end boundary block, this to detect all steps over all the inserted data
      */
     private void calculateSteps(){
+
+        //Reset step array List
+        timeOfSteps.clear();
 
         stepCount = 0;
         for(int i=pointerStart; i<(rawDataSize-pointsPerBoundary); i++){//GO over all data points in analysing segments
@@ -252,6 +266,10 @@ public class QueuingDataHandler {
                             rawDataBuffer[tempMaxIndex].setStepIdentifier(2); //Maximum in step
                             rawDataBuffer[tempMinIndex].setStepIdentifier(3); //Minimum in step
                             stepCount++;
+
+                            //Add steps
+                            timeOfSteps.add(new Long(rawDataBuffer[i].getTimestamp()));
+
                             i = i + TIME_DOMAIN_STEPS;
                         }
                     }

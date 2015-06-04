@@ -12,6 +12,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -389,10 +390,13 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     @Override
     public void onNewDataBlock(int count, QueuingSensorData[] dataArray, MacroBlockObject blockObject) {
         tvSteps.setText("number of steps: " + count);
+        //Log.d("Steps", "Number of steps: " + count);
     }
 
     @Override
-    public void onStepCount(int count) {
-
+    public void onStepCount(ArrayList<Long> timeOfSteps) {
+        Log.d("Steps", "Number of steps: "+ timeOfSteps.size());
+        for(long time: timeOfSteps){
+        }
     }
 }

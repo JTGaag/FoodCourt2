@@ -855,8 +855,8 @@ public class GraphJoostActivity extends ActionBarActivity implements SensorEvent
     }
 
     @Override
-    public void onStepCount(int count) {
-        tvStepCount.setText("StepCount: "+count);
+    public void onStepCount(ArrayList<Long> timeOfSteps) {
+
     }
 
     public void showMonitoringDialog(){
