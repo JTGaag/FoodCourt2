@@ -10,9 +10,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.util.Log;
+import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,7 +20,6 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.aj.foodcourt2.R;
 import com.aj.map.CollisionMap;
 import com.aj.map.LineSegment;
 import com.aj.map.RectangleMap;
@@ -157,7 +155,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
         collisionMap = new CollisionMap(lineSegmentArrayList);
 
-        particleManager = new ParticleManager(10000, rectangleMap, collisionMap);
+        particleManager = new ParticleManager(10000, rectangleMap, collisionMap, getApplicationContext());
 
         particleArray = particleManager.getParticleArray();
 
@@ -175,7 +173,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         Paint paintDot = new Paint();
         paintDot.setColor(Color.rgb(51, 128, 51));
         paintDot.setStyle(Paint.Style.FILL);
-        paintDot.setStrokeWidth(2.0f);
+        paintDot.setStrokeWidth(5.0f);
 
         Paint paintDotDestroy = new Paint();
         paintDotDestroy.setColor(Color.rgb(255,51,51));
@@ -231,7 +229,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                 Paint paintDot = new Paint();
                 paintDot.setColor(Color.rgb(51, 128, 51));
                 paintDot.setStyle(Paint.Style.FILL);
-                paintDot.setStrokeWidth(2.0f);
+                paintDot.setStrokeWidth(5.0f);
 
                 Paint paintDotDestroy = new Paint();
                 paintDotDestroy.setColor(Color.rgb(255, 51, 51));

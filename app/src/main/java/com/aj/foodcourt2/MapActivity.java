@@ -115,7 +115,7 @@ public class MapActivity extends ActionBarActivity {
 
         collisionMap = new CollisionMap(lineSegmentArrayList);
 
-        particleManager = new ParticleManager(10000, rectangleMap, collisionMap);
+        particleManager = new ParticleManager(10000, rectangleMap, collisionMap, getApplicationContext());
 
         particleArray = particleManager.getParticleArray();
 

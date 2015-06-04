@@ -1,5 +1,8 @@
 package com.aj.particlefilter;
 
+import android.content.Context;
+import android.util.Log;
+
 import com.aj.map.CollisionMap;
 import com.aj.map.LineSegment;
 import com.aj.map.RectangleMap;
@@ -18,6 +21,7 @@ public class ParticleManager {
     CollisionMap collisionMap;
     double meanX = 0.0;
     double meanY = 0.0;
+    Context context;
 
     private ArrayList<Particle2[]> savedData = new ArrayList<Particle2[]>();
 
@@ -33,11 +37,12 @@ public class ParticleManager {
      * @param collisionMap
      */
 
-    public ParticleManager(int nParticles, RectangleMap rectangleMap, CollisionMap collisionMap) {
+    public ParticleManager(int nParticles, RectangleMap rectangleMap, CollisionMap collisionMap, Context context) {
         this.nParticles = nParticles;
         particleArray = new Particle2[nParticles];
         this.rectangleMap = rectangleMap;
         this.collisionMap = collisionMap;
+        this.context = context;
         if(!this.rectangleMap.isFinalized()){
             this.rectangleMap.assignWeights();
         }
@@ -95,6 +100,7 @@ public class ParticleManager {
                 k++;
             }
         }
+        Log.d("Particle Manager", "Active particles: " + activeParticles + " ActiveParticleNumber: " + activeParticlesArray[0]);
 
 //        //                destroyedParticles++;
 ////                destroyedParticlesArray[j]= i;
