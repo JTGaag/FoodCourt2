@@ -173,8 +173,8 @@ public class ParticleManager {
             double distance = random.nextGaussian()*distanceStd + meanDistance;
             angle = angle/180*Math.PI;
             particleArray[i].setOldPosition();
-            particleArray[i].setX(particleArray[i].getX() + Math.sin(angle)*distance);
-            particleArray[i].setY(particleArray[i].getY() - Math.cos(angle)*distance);
+            particleArray[i].setX(particleArray[i].getX() + Math.cos(angle)*distance);
+            particleArray[i].setY(particleArray[i].getY() - Math.sin(angle)*distance);
             double x1 = particleArray[i].getOldX();
             double y1 = particleArray[i].getOldY();
             double x2 = particleArray[i].getX();

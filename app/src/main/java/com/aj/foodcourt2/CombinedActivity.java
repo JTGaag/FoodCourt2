@@ -183,44 +183,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                 double distance = Double.parseDouble(etDistance.getText().toString());
                 particleManager.moveAndDistribute(direction, 15, distance, (distance / 10));
 
-                particleManager.calculateMean();
-
-                bg.eraseColor(android.graphics.Color.TRANSPARENT);
-
-                Canvas canvas = new Canvas(bg);
-                for (Rectangle rec : rectangleMap.getRectangles()) {
-                    canvas.drawRect((float) (rec.getX() * 50), (float) (rec.getY() * 50), (float) ((rec.getX() + rec.getWidth()) * 50), (float) ((rec.getY() + rec.getHeight()) * 50), paint);
-                }
-                int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
-                if ((r >0)&&(r<cellArrayList.size())&&(particleManager.hasConverged())){
-                    Rectangle rec = cellArrayList.get(r);
-                    canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCell);
-                    canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCellStroke);
-                }
-
-
-                Particle2[] tmpParticleArray = particleManager.getParticleArray();
-
-                for (Particle2 particle : tmpParticleArray) {
-                    //canvas.drawLine((float) particle.getOldX() * 50, (float) particle.getOldY() * 50, (float) particle.getX() * 50, (float) particle.getY() * 50, paintMove);
-                    if (!particle.isDestroyed()) {
-                        canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDot);
-                    } else {
-                        //canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDotDestroy);
-                    }
-
-                }
-
-                for (LineSegment line : collisionMap.getLineSegments()) {
-                    canvas.drawLine((float) line.getX1() * 50, (float) line.getY1() * 50, (float) line.getX2() * 50, (float) line.getY2() * 50, paintCollision);
-                }
-
-                canvas.drawPoint((float) (particleManager.getMeanX() * 50), (float) (particleManager.getMeanY() * 50), paintMean);
-                //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
-
-
-                //noinspection deprecation
-                mImage.setImageBitmap(bg);
+                redrawMap();
             }
         });
 
@@ -483,5 +446,49 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     @Override
     public void onMotion(double direction, double distance) {
         Log.d(LOG_TAG, "Direction: " + direction + " ; Distance: " + distance);
+        //move particles
+        particleManager.moveAndDistribute(direction, 15, distance, distance/8);
+        redrawMap();
+    }
+
+    private void redrawMap(){
+        particleManager.calculateMean();
+
+        bg.eraseColor(android.graphics.Color.TRANSPARENT);
+
+        Canvas canvas = new Canvas(bg);
+        for (Rectangle rec : rectangleMap.getRectangles()) {
+            canvas.drawRect((float) (rec.getX() * 50), (float) (rec.getY() * 50), (float) ((rec.getX() + rec.getWidth()) * 50), (float) ((rec.getY() + rec.getHeight()) * 50), paint);
+        }
+        int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
+        if ((r >0)&&(r<cellArrayList.size())&&(particleManager.hasConverged())){
+            Rectangle rec = cellArrayList.get(r);
+            canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCell);
+            canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCellStroke);
+        }
+
+
+        Particle2[] tmpParticleArray = particleManager.getParticleArray();
+
+        for (Particle2 particle : tmpParticleArray) {
+            //canvas.drawLine((float) particle.getOldX() * 50, (float) particle.getOldY() * 50, (float) particle.getX() * 50, (float) particle.getY() * 50, paintMove);
+            if (!particle.isDestroyed()) {
+                canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDot);
+            } else {
+                //canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDotDestroy);
+            }
+
+        }
+
+        for (LineSegment line : collisionMap.getLineSegments()) {
+            canvas.drawLine((float) line.getX1() * 50, (float) line.getY1() * 50, (float) line.getX2() * 50, (float) line.getY2() * 50, paintCollision);
+        }
+
+        canvas.drawPoint((float) (particleManager.getMeanX() * 50), (float) (particleManager.getMeanY() * 50), paintMean);
+        //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
+
+
+        //noinspection deprecation
+        mImage.setImageBitmap(bg);
     }
 }
