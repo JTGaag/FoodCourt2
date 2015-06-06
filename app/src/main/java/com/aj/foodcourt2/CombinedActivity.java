@@ -23,6 +23,9 @@ import com.aj.map.CollisionMap;
 import com.aj.map.LineSegment;
 import com.aj.map.RectangleMap;
 import com.aj.map.TouchImageView;
+import com.aj.particlefilter.GyroData;
+import com.aj.particlefilter.MotionDataHandler;
+import com.aj.particlefilter.MotionListener;
 import com.aj.particlefilter.Particle2;
 import com.aj.particlefilter.ParticleManager;
 import com.aj.particlefilter.Rectangle;
@@ -33,7 +36,7 @@ import com.aj.queuing.QueuingSensorData;
 
 import java.util.ArrayList;
 
-public class CombinedActivity extends ActionBarActivity implements SensorEventListener, QueuingListener {
+public class CombinedActivity extends ActionBarActivity implements SensorEventListener, QueuingListener, MotionListener {
 
     //sensors
     private SensorManager sensorManager;
@@ -77,6 +80,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     //QDH to be used to analyse acceleration data and output step information and quining information
     private QueuingDataHandler queuingDataHandler;
+    private MotionDataHandler motionDataHandler;
 
 
     //Paints
@@ -217,7 +221,11 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
             }
         });
 
+        /*
+        Initialize all data handlers
+         */
         queuingDataHandler = new QueuingDataHandler(this, 50, 3, 7);
+        motionDataHandler = new MotionDataHandler(this);
     }
 
     @Override
@@ -315,7 +323,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                 break;
             case Sensor.TYPE_GYROSCOPE:
 
-
+                motionDataHandler.addGyroData(new GyroData(sensorEvent.values[2], sensorEvent.timestamp));
 
                 break;
             default:
@@ -459,5 +467,17 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         paintMean.setColor(Color.rgb(255, 0, 0));
         paintMean.setStyle(Paint.Style.FILL);
         paintMean.setStrokeWidth(10.0f);
+    }
+
+    /**
+     * Called when straight motion has ended or specific time of time has passed.
+     * This method will start the motion in the particle manager
+     *
+     * @param direction direction of detected motion
+     * @param distance  distance of detected motion
+     */
+    @Override
+    public void onMotion(double direction, double distance) {
+
     }
 }
