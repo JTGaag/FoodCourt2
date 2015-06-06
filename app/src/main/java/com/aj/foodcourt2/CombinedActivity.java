@@ -1,6 +1,7 @@
 package com.aj.foodcourt2;
 
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -18,6 +19,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.aj.map.CollisionMap;
 import com.aj.map.LineSegment;
@@ -73,8 +75,11 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     //Stuff
     EditText etDirection, etDistance;
-    Button buttonMove;
+    Button buttonMove, buttonMotionDetection, buttonBacktrack;
     Bitmap bg;
+
+    boolean motionDetection = false;
+    Context context = this;
 
     //Variables to save gravity data
     private double currentGravityX = 0;
@@ -116,6 +121,8 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         etDirection = (EditText)findViewById(R.id.editText_direction_combined);
         etDistance = (EditText)findViewById(R.id.editText_distance_combined);
         buttonMove = (Button)findViewById(R.id.button_move_combined);
+        buttonMotionDetection = (Button)findViewById(R.id.button_motion_detection);
+        buttonBacktrack = (Button)findViewById(R.id.button_backtrack);
 
         //Make maps to be used for distribution and collision
         makeMaps();
@@ -184,6 +191,21 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                 particleManager.moveAndDistribute(direction, 15, distance, (distance / 10));
 
                 redrawMap();
+            }
+        });
+
+        buttonMotionDetection.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                motionDetection = !motionDetection;
+                Toast.makeText(context, "Motiondeatection: " + motionDetection, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        buttonBacktrack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                backTrack();
             }
         });
 
@@ -273,8 +295,9 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                         tvAzimut.setText("azimut: " + String.format("%-3.3f",azimut) + " [radians]");
                         tvAzimutDegrees.setText("degrees: " + String.format("%-3.1f",degrees) + "[degrees]");
 
-                        motionDataHandler.addMagneticData(new MagneticData(azimut, sensorEvent.timestamp));
-
+                        if(motionDetection) {
+                            motionDataHandler.addMagneticData(new MagneticData(azimut, sensorEvent.timestamp));
+                        }
                     }
                 }
 
@@ -290,9 +313,9 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
                 break;
             case Sensor.TYPE_GYROSCOPE:
-
-                motionDataHandler.addGyroData(new GyroData(sensorEvent.values[2], sensorEvent.timestamp));
-
+                if(motionDetection) {
+                    motionDataHandler.addGyroData(new GyroData(sensorEvent.values[2], sensorEvent.timestamp));
+                }
                 break;
             default:
                 break;
@@ -312,7 +335,9 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     @Override
     public void onStepCount(ArrayList<Long> timeOfSteps, long endTime) {
         //Log.d("Steps", "Number of steps: " + timeOfSteps.size());
-        motionDataHandler.addSteps(timeOfSteps, endTime);
+        if(motionDetection) {
+            motionDataHandler.addSteps(timeOfSteps, endTime);
+        }
     }
 
     protected void makeMaps(){
@@ -452,6 +477,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     }
 
     private void redrawMap(){
+
         particleManager.calculateMean();
 
         bg.eraseColor(android.graphics.Color.TRANSPARENT);
@@ -491,4 +517,62 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         //noinspection deprecation
         mImage.setImageBitmap(bg);
     }
+    public void backTrack(){
+
+
+
+            ArrayList<double[]> trackedMeanData = new ArrayList<double[]>();
+            double[] beginCoordinates = new double[2];
+            double[] endCoordinates = new double[2];
+
+            trackedMeanData = particleManager.backTrack();
+
+            bg.eraseColor(android.graphics.Color.TRANSPARENT);
+
+            Canvas canvas = new Canvas(bg);
+            for (Rectangle rec : rectangleMap.getRectangles()) {
+                canvas.drawRect((float) (rec.getX() * 50), (float) (rec.getY() * 50), (float) ((rec.getX() + rec.getWidth()) * 50), (float) ((rec.getY() + rec.getHeight()) * 50), paint);
+            }
+            int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
+            if ((r >0)&&(r<cellArrayList.size())&&(particleManager.hasConverged())){
+                Rectangle rec = cellArrayList.get(r);
+                canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCell);
+                canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCellStroke);
+            }
+
+
+            Particle2[] tmpParticleArray = particleManager.getParticleArray();
+
+            for (Particle2 particle : tmpParticleArray) {
+                //canvas.drawLine((float) particle.getOldX() * 50, (float) particle.getOldY() * 50, (float) particle.getX() * 50, (float) particle.getY() * 50, paintMove);
+                if (!particle.isDestroyed()) {
+                    canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDot);
+                } else {
+                    //canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDotDestroy);
+                }
+
+            }
+
+            for (LineSegment line : collisionMap.getLineSegments()) {
+                canvas.drawLine((float) line.getX1() * 50, (float) line.getY1() * 50, (float) line.getX2() * 50, (float) line.getY2() * 50, paintCollision);
+            }
+
+            canvas.drawPoint((float) (particleManager.getMeanX() * 50), (float) (particleManager.getMeanY() * 50), paintMean);
+            //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
+
+
+
+
+            for (int i = 0; i < trackedMeanData.size() - 1; i++) {
+                beginCoordinates = trackedMeanData.get(i);
+                endCoordinates = trackedMeanData.get(i+1);
+                canvas.drawLine((float)beginCoordinates[0]*50,(float)beginCoordinates[1]*50, (float)endCoordinates[0]*50,(float)endCoordinates[1]*50,paint);
+            }
+
+            //noinspection deprecation
+            mImage.setImageBitmap(bg);
+        }
+
+
+
 }

@@ -27,6 +27,8 @@ public class ParticleManager {
 
     private ArrayList<Particle2[]> savedData = new ArrayList<Particle2[]>();
 
+    public ArrayList<double[]> trackedMeanData = new ArrayList<double[]>();
+
 
 
 
@@ -75,7 +77,8 @@ public class ParticleManager {
         redistribute();
 
         saveParticleData();
-        Log.d("converging", "has Converged: " + hasConverged());
+        //Log.d("converging", "has Converged: " + hasConverged());
+        backTrack();
 
     }
     /**
@@ -163,6 +166,7 @@ public class ParticleManager {
             double tempX = tempRec.getX() + tempRec.getWidth() * random.nextDouble();
             double tempY = tempRec.getY() + tempRec.getHeight() * random.nextDouble();
             particleArray[i] = new Particle2(tempX, tempY);
+            particleArray[i].setParent(i);
         }
     }
 
@@ -315,6 +319,39 @@ public class ParticleManager {
 
 
 
+    }
+    public ArrayList<double[]> backTrack() {
+
+        boolean[] trueParent = new boolean[nParticles];
+        int nrTrue = 0;
+        double trackMean[] = new double[2];
+        //if (hasConverged()) {
+            for (int i = 1; i < savedData.size() - 2; i++) { //the parent of the second iteration is the first iteration
+                Particle2[] trackData = savedData.get(savedData.size() - i);
+                trackMean[0] = 0;
+                trackMean[1] = 0;
+                for (Particle2 particle : trackData) {
+
+                    trueParent[particle.getParent()] = true;
+                }
+                Particle2[] meanTrackData = savedData.get(savedData.size() - i - 1);
+                for (int j = 0; i < nParticles; i++) { //count nr of true particles
+                    if (trueParent[j]) {
+                        trackMean[0] = trackMean[0] + meanTrackData[j].getX();
+                        trackMean[1] = trackMean[1] + meanTrackData[j].getY();
+                        nrTrue++;
+                    }
+                }
+
+                trackMean[0] = trackMean[0] / nrTrue;
+                trackMean[1] = trackMean[1] / nrTrue;
+                trackedMeanData.add(trackMean);
+
+                //}
+
+            }
+        //}
+        return trackedMeanData;
     }
 
 

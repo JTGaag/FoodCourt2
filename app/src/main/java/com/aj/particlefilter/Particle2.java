@@ -5,8 +5,9 @@ package com.aj.particlefilter;
  */
 public class Particle2 {
 
-    double x, y, oldX, oldY, direction, id, parent, distance;
+    double x, y, oldX, oldY, direction, distance;
     boolean destroyed = false;
+    int parent, id;
 
 
     /**
@@ -28,10 +29,11 @@ public class Particle2 {
     public Particle2(Particle2 old){
         this.x = old.getX();
         this.y = old.getY();
+        this.parent = old.getParent();
     }
 
 
-    public Particle2(double xvalue, double yvalue, double direction, double id, double distance, double parent){
+    public Particle2(double xvalue, double yvalue, double direction, int id, double distance, double parent){
 
         this.x = xvalue;
         this.y = yvalue;
@@ -63,11 +65,11 @@ public class Particle2 {
         this.direction = direction;
     }
 
-    public double getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(double id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -102,11 +104,11 @@ public class Particle2 {
         return oldY;
     }
 
-    public double getParent() {
+    public int getParent() {
         return parent;
     }
 
-    public void setParent(double parent) {
+    public void setParent(int parent) {
         this.parent = parent;
     }
 }
