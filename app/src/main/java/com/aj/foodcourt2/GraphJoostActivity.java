@@ -855,7 +855,7 @@ public class GraphJoostActivity extends ActionBarActivity implements SensorEvent
     }
 
     @Override
-    public void onStepCount(ArrayList<Long> timeOfSteps) {
+    public void onStepCount(ArrayList<Long> timeOfSteps, long endTime) {
 
     }
 

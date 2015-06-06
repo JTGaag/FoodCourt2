@@ -1,7 +1,5 @@
 package com.aj.queuing;
 
-import android.util.Log;
-
 /**
  * Created by Joost on 29/04/2015.
  */
@@ -25,9 +23,9 @@ public class MacroBlockObject {
         endTimestamp = blockSegments[blockSegments.length-1].getEndTimestamp();
         sampleFrequency = (this.numberOfSegments*blockSegments[0].getPointsInSegment()/((endTimestamp-startTimestamp)/1000000000.0));
         calculateState();
-        Log.d("Block info","Number of points: "+this.numberOfSegments*blockSegments[0].getPointsInSegment());
-        Log.d("Block info", "Time: " + ((endTimestamp - startTimestamp) / 1000000000.0));
-        Log.d("Block info","Sampling freq: "+(this.numberOfSegments*blockSegments[0].getPointsInSegment()/((endTimestamp-startTimestamp)/1000000000.0)));
+        //Log.d("Block info","Number of points: "+this.numberOfSegments*blockSegments[0].getPointsInSegment());
+        //Log.d("Block info", "Time: " + ((endTimestamp - startTimestamp) / 1000000000.0));
+        //Log.d("Block info","Sampling freq: "+(this.numberOfSegments*blockSegments[0].getPointsInSegment()/((endTimestamp-startTimestamp)/1000000000.0)));
     }
 
     private void calculateState(){

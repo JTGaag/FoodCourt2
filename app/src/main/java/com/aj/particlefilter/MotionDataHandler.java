@@ -8,10 +8,16 @@ import java.util.ArrayList;
  * Created by Joost on 04/06/2015.
  */
 public class MotionDataHandler {
+    final String LOG_TAG = "Motion Data Handler";
+
     //ArrayLists to save motion data
     ArrayList<GyroData> gyroDataArrayList = new ArrayList<GyroData>();
     ArrayList<MagneticData> magneticDataArrayList = new ArrayList<MagneticData>();
     ArrayList<Long> timeOfSteps = new ArrayList<Long>();
+
+    //Variables and lists for calculation
+    ArrayList<MagneticData> magneticBuffer = new ArrayList<MagneticData>();
+    int numberOfStepsInMotion = 0;
 
 
     boolean calculationRequest = false;
@@ -25,11 +31,12 @@ public class MotionDataHandler {
     final double NS2S = 1.0/1000000000.0;
     final double TIME_LIMIT = 10.0; //time limit in seconds when new motion needs to ben calculated and updated.
     final double ROTATION_LIMIT = 40.0; // Rotation limit in degrees when motion needs to be updated
+    final double BUILDING_ROTATION_OFFSET_DEG = 156.5; //ROtation offset from true north to posiitve x-axis of map
+    final double DISTANCE_PER_STEP = 0.72;
 
     public MotionDataHandler(MotionListener motionListener) {
         this.motionListener = motionListener;
     }
-
 
     private void deleteOldData(long endTimestamp){
         int gyroStartId = gyroDataArrayList.size();
@@ -83,8 +90,7 @@ public class MotionDataHandler {
 
         //Check time constrain
         if((gyroDataArrayList.get(gyroDataArrayList.size()-1).getTimestamp()-lastCalculationTime)*NS2S > TIME_LIMIT){
-            Log.d("Motion Calculation", "Time triggered motion calculation");
-            lastCalculationTime = gyroDataArrayList.get(gyroDataArrayList.size()-1).getTimestamp();
+            Log.d(LOG_TAG, "Time triggered motion calculation");
             return true;
         }
 
@@ -93,14 +99,73 @@ public class MotionDataHandler {
         for(int i = (gyroDataArrayList.size()-1); i>=0; i--){
             sumRotation += gyroDataArrayList.get(i).getZRot();
             if(Math.abs(sumRotation) > ROTATION_LIMIT){
-                Log.d("Motion Calculation", "Rotation triggered motion calculation. Rotation: " + sumRotation);
-                lastCalculationTime = gyroDataArrayList.get(gyroDataArrayList.size()-1).getTimestamp();
-                //TODO: Block rotation calculation for a period of time
+                Log.d(LOG_TAG, "Rotation triggered motion calculation. Rotation: " + sumRotation);
+                //NOTNEEDED: Block rotation calculation for a period of time
                 return true;
             }
         }
         return false;
     }
+
+    private void makeBuffers(long endTimestamp){
+        int magneticStartId = magneticDataArrayList.size();
+        numberOfStepsInMotion = timeOfSteps.size();
+
+
+        for(int i=0; i<magneticDataArrayList.size(); i++){
+            if(magneticDataArrayList.get(i).getTimestamp()>endTimestamp){
+                magneticStartId = i;
+                break;
+            }
+        }
+        for(int i=0; i<timeOfSteps.size(); i++){
+            if(timeOfSteps.get(i)>endTimestamp){
+                numberOfStepsInMotion = i;
+                break;
+            }
+        }
+
+        magneticBuffer = new ArrayList<MagneticData>(magneticDataArrayList.subList(0,magneticStartId));
+    }
+
+    private double meanDirection(){
+        double sumX = 0;
+        double sumY = 0;
+        int numberOfPoints = magneticBuffer.size();
+
+        //Add all unit vectors
+        for(MagneticData data: magneticBuffer){
+            sumX += Math.cos(-(data.getAzimut() / 180 * Math.PI));
+            sumY += Math.sin(-(data.getAzimut() / 180 * Math.PI));
+        }
+
+        if(sumX==0 && sumY==0) {
+            Log.e(LOG_TAG, "Error in calculation average angle, possible that no values are received");
+            return 0;
+        }else {
+            return Math.atan2(sumY / numberOfPoints, sumX / numberOfPoints) * 180 / Math.PI;
+        }
+    }
+
+
+    private void doCalculation(){
+
+        //Update buffers to use for calculations
+        makeBuffers(newCalculationTime);
+
+        //TODO: what to do with rotation (screwing up angles)
+        //TODO: what if two calculations steps is needed between step gathering
+
+        double direction = meanDirection() + BUILDING_ROTATION_OFFSET_DEG;
+        double distance = numberOfStepsInMotion * DISTANCE_PER_STEP;
+        motionListener.onMotion(direction, distance);
+
+        //Reset request boolean TODO: FIx with extra check for second calculation before getting step data
+        calculationRequest = false;
+        //Clear all used data after calculations
+        deleteOldData(newCalculationTime);
+    }
+
 
     public void addGyroData(GyroData gyroData){
         if(gyroDataArrayList.size()>0){
@@ -113,8 +178,9 @@ public class MotionDataHandler {
         //Check
         if(!calculationRequest) {
             if(isCalculationNeeded()){
-                //Temp for test
-                deleteOldData(gyroData.getTimestamp());
+                calculationRequest = true;
+                newCalculationTime = gyroData.getTimestamp();
+                lastCalculationTime = newCalculationTime;
             }
         }
     }
@@ -123,8 +189,12 @@ public class MotionDataHandler {
         this.magneticDataArrayList.add(magneticData);
     }
 
-    public void addSteps(ArrayList<Long> registeredSteps){
+    public void addSteps(ArrayList<Long> registeredSteps, long endTime){
         this.timeOfSteps.addAll(registeredSteps);
+        if(calculationRequest && endTime >= newCalculationTime){
+            //Do calculations
+            doCalculation();
+        }
     }
 
 

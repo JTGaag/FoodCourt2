@@ -121,7 +121,7 @@ public class QueuingDataHandler {
                         calculateSteps();
 
                         //Send steps
-                        queuingListener.onStepCount(timeOfSteps);
+                        queuingListener.onStepCount(timeOfSteps, rawDataBuffer[rawDataSize-pointsPerBoundary-1].getTimestamp());
 
 
                         rawDataPointer = pointsPerBoundary*2;
@@ -144,7 +144,7 @@ public class QueuingDataHandler {
                         calculateSteps();
 
                         //Send steps
-                        queuingListener.onStepCount(timeOfSteps);
+                        queuingListener.onStepCount(timeOfSteps, rawDataBuffer[rawDataSize-pointsPerBoundary-1].getTimestamp());
 
                         //Send block data
                         MacroBlockObject currentBlock = generateBlock();
@@ -241,8 +241,8 @@ public class QueuingDataHandler {
 
                         //TODO: Do something here with fourier transform to see if possible step is not a distrubance such as random movement etc.
 
-                        Log.d("Array", "min index: " + (i-FOURIER_DOMAIN_RADIUS));
-                        Log.d("Array", "max index: " + (i + FOURIER_DOMAIN_RADIUS));
+                        //Log.d("Array", "min index: " + (i-FOURIER_DOMAIN_RADIUS));
+                        //Log.d("Array", "max index: " + (i + FOURIER_DOMAIN_RADIUS));
                         QueuingSensorData tempFourierData[] = Arrays.copyOfRange(rawDataBuffer, i-FOURIER_DOMAIN_RADIUS, i + FOURIER_DOMAIN_RADIUS);
                         FourierAnalysis tempFourierAnalysis = new FourierAnalysis(tempFourierData);
 

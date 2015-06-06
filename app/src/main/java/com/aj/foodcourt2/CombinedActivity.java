@@ -24,6 +24,7 @@ import com.aj.map.LineSegment;
 import com.aj.map.RectangleMap;
 import com.aj.map.TouchImageView;
 import com.aj.particlefilter.GyroData;
+import com.aj.particlefilter.MagneticData;
 import com.aj.particlefilter.MotionDataHandler;
 import com.aj.particlefilter.MotionListener;
 import com.aj.particlefilter.Particle2;
@@ -37,6 +38,8 @@ import com.aj.queuing.QueuingSensorData;
 import java.util.ArrayList;
 
 public class CombinedActivity extends ActionBarActivity implements SensorEventListener, QueuingListener, MotionListener {
+
+    final String LOG_TAG = "Combinded activity";
 
     //sensors
     private SensorManager sensorManager;
@@ -307,6 +310,8 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                         tvAzimut.setText("azimut: " + String.format("%-3.3f",azimut) + " [radians]");
                         tvAzimutDegrees.setText("degrees: " + String.format("%-3.1f",degrees) + "[degrees]");
 
+                        motionDataHandler.addMagneticData(new MagneticData(azimut, sensorEvent.timestamp));
+
                     }
                 }
 
@@ -338,14 +343,13 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     @Override
     public void onNewDataBlock(int count, QueuingSensorData[] dataArray, MacroBlockObject blockObject) {
-        tvSteps.setText("number of steps: " + count);
+        //tvSteps.setText("number of steps: " + count);
     }
 
     @Override
-    public void onStepCount(ArrayList<Long> timeOfSteps) {
-        Log.d("Steps", "Number of steps: " + timeOfSteps.size());
-        for(long time: timeOfSteps){
-        }
+    public void onStepCount(ArrayList<Long> timeOfSteps, long endTime) {
+        //Log.d("Steps", "Number of steps: " + timeOfSteps.size());
+        motionDataHandler.addSteps(timeOfSteps, endTime);
     }
 
     protected void makeMaps(){
@@ -478,6 +482,6 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
      */
     @Override
     public void onMotion(double direction, double distance) {
-
+        Log.d(LOG_TAG, "Direction: " + direction + " ; Distance: " + distance);
     }
 }
