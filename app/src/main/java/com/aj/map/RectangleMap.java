@@ -75,4 +75,16 @@ public class RectangleMap {
     public boolean isFinalized() {
         return finalized;
     }
+
+    public int isPointinRectangle(double meanX, double meanY){
+        for(Rectangle rec : rectangles){
+            if ((meanX >=rec.getX())&&(meanX<= (rec.getX()+rec.getWidth()))&&(meanY>=rec.getY())&&(meanY<= (rec.getY()+rec.getHeight()))) {
+             return rectangles.indexOf(rec);
+            }
+        }
+
+        return -1;
+
+
+    }
 }

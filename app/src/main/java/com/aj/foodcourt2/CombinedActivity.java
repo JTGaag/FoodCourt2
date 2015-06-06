@@ -54,8 +54,10 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     //map
     ArrayList<Rectangle> rectangleArrayList = new ArrayList<Rectangle>();
+    ArrayList<Rectangle> cellArrayList = new ArrayList<Rectangle>();
     ArrayList<LineSegment> lineSegmentArrayList = new ArrayList<LineSegment>();
     RectangleMap rectangleMap;
+    RectangleMap cellMap;
     CollisionMap collisionMap;
     ParticleManager particleManager;
     Particle2[] particleArray;
@@ -79,6 +81,8 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     //Paints
     Paint paint = new Paint();
+    Paint paintCell = new Paint();
+    Paint paintCellStroke = new Paint();
     Paint paintDot = new Paint();
     Paint paintDotDestroy = new Paint();
     Paint paintCollision = new Paint();
@@ -115,7 +119,9 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         //Make rectangle map
         rectangleMap = new RectangleMap(rectangleArrayList);
         rectangleMap.assignWeights();
-
+        // make cell map
+        cellMap = new RectangleMap(cellArrayList);
+        cellMap.assignWeights();
         //init COllison Map
         collisionMap = new CollisionMap(lineSegmentArrayList);
 
@@ -136,6 +142,14 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         for (Rectangle rec : rectangleMap.getRectangles()){
             canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paint);
         }
+
+        int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
+        if ((r >0)&&(r<cellArrayList.size()&&(particleManager.hasConverged()))){
+            Rectangle rec = cellArrayList.get(r);
+            canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCell);
+            canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCellStroke);
+        }
+
 
         for(Particle2 particle : particleArray){
             if(!particle.isDestroyed()) {
@@ -170,6 +184,13 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                 for (Rectangle rec : rectangleMap.getRectangles()) {
                     canvas.drawRect((float) (rec.getX() * 50), (float) (rec.getY() * 50), (float) ((rec.getX() + rec.getWidth()) * 50), (float) ((rec.getY() + rec.getHeight()) * 50), paint);
                 }
+                int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
+                if ((r >0)&&(r<cellArrayList.size())&&(particleManager.hasConverged())){
+                    Rectangle rec = cellArrayList.get(r);
+                    canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCell);
+                    canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCellStroke);
+                }
+
 
                 Particle2[] tmpParticleArray = particleManager.getParticleArray();
 
@@ -381,6 +402,33 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         rectangleArrayList.add(new Rectangle(12, 11.3, 4, 3));//coffeeroom
         rectangleArrayList.add(new Rectangle(56, 8.2, 4, 6.1));//room3
         rectangleArrayList.add(new Rectangle(60, 8.2, 4, 6.1));//room4
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //Cell map
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        double difference = 0.8;
+        cellArrayList.add(new Rectangle(2, 6.1, 4, 2.1));   //c19
+        cellArrayList.add(new Rectangle(0, 0, 4, 6.1));     //c18
+        cellArrayList.add(new Rectangle(4, 0, 4, 6.1));     //c17
+        cellArrayList.add(new Rectangle(6, 6.1, 4, 2.1));   //c16
+        cellArrayList.add(new Rectangle(10, 6.1, 4, 2.1));  //c15
+        cellArrayList.add(new Rectangle(14, 6.1, 4, 2.1));  //c14
+        cellArrayList.add(new Rectangle(12, 0, 4, 6.1));    //c13
+        cellArrayList.add(new Rectangle(16, 0, 4, 6.1));    //c12
+        cellArrayList.add(new Rectangle(12, 11.3, 4, 3));   //c11
+        cellArrayList.add(new Rectangle(36-difference, 6.1, 4, 2.1));   //c9
+        cellArrayList.add(new Rectangle(40-difference, 6.1, 4, 2.1));   //c8
+        cellArrayList.add(new Rectangle(44-difference, 6.1, 4, 2.1));   //c7
+        cellArrayList.add(new Rectangle(48-difference, 6.1, 4, 2.1));   //c6
+        cellArrayList.add(new Rectangle(52-difference, 6.1, 4, 2.1));   //c5
+        cellArrayList.add(new Rectangle(56-difference, 6.1, 4, 2.1));   //c4
+        cellArrayList.add(new Rectangle(60-difference, 6.1, 4, 2.1));   //c3
+        cellArrayList.add(new Rectangle(56, 8.2, 4, 6.1));   //c2
+        cellArrayList.add(new Rectangle(60, 8.2, 4, 6.1));   //c1
+
     }
 
     protected void setPaints(){
@@ -388,6 +436,13 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         paint.setColor(Color.rgb(0, 0, 0));
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(5.0f);
+
+        paintCell.setColor(Color.argb(128, 255, 0, 0));
+        paintCell.setStyle(Paint.Style.FILL);
+
+        paintCellStroke.setColor(Color.rgb(128, 0, 0));
+        paintCellStroke.setStyle(Paint.Style.STROKE);
+        paintCellStroke.setStrokeWidth(5.0f);
 
         paintDot.setColor(Color.rgb(51, 128, 51));
         paintDot.setStyle(Paint.Style.FILL);
@@ -401,7 +456,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         paintCollision.setStyle(Paint.Style.FILL);
         paintCollision.setStrokeWidth(5.0f);
 
-        paintMean.setColor(Color.rgb(0, 255, 255));
+        paintMean.setColor(Color.rgb(255, 0, 0));
         paintMean.setStyle(Paint.Style.FILL);
         paintMean.setStrokeWidth(10.0f);
     }

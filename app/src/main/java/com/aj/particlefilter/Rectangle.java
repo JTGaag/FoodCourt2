@@ -14,6 +14,13 @@ public class Rectangle {
     double area;
     double areaWeight;
 
+    /**
+     *
+     * @param x
+     * @param y
+     * @param width
+     * @param height
+     */
     public Rectangle(double x, double y, double width, double height) {
         this.x = x;
         this.y = y;

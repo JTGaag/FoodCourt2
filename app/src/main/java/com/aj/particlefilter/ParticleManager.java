@@ -22,6 +22,8 @@ public class ParticleManager {
     double meanX = 0.0;
     double meanY = 0.0;
     Context context;
+    final int RADIUS = 4;
+    final double PERCENTAGE = 0.90;
 
     private ArrayList<Particle2[]> savedData = new ArrayList<Particle2[]>();
 
@@ -47,7 +49,7 @@ public class ParticleManager {
             this.rectangleMap.assignWeights();
         }
         //initiateParticles();
-        initateParticlesMap();
+        initiateParticlesMap();
         saveParticleData();
     }
 
@@ -73,6 +75,7 @@ public class ParticleManager {
         redistribute();
 
         saveParticleData();
+        Log.d("converging", "has Converged: " + hasConverged());
 
     }
     /**
@@ -152,7 +155,7 @@ public class ParticleManager {
         */
     }
 
-    public void initateParticlesMap(){
+    public void initiateParticlesMap(){
         Random random = new Random();
         ArrayList<Rectangle> rectangles = rectangleMap.getRectangles();
         for(int i=0; i<nParticles; i++){
@@ -210,7 +213,7 @@ public class ParticleManager {
     public boolean isPointOnLine(LineSegment line, double x, double y){
         //Move to origin
         LineSegment aTmp = new LineSegment(0, 0, line.getX2()-line.getX1(), line.getY2()-line.getY1());
-        double r = crossProduct(aTmp.getX2(), aTmp.getY2(), x-line.getX1(), y-line.getY1());
+        double r = crossProduct(aTmp.getX2(), aTmp.getY2(), x -line.getX1(), y-line.getY1());
         return Math.abs(r) < EPSILON;
     }
 
@@ -263,4 +266,56 @@ public class ParticleManager {
     public double getMeanY() {
         return meanY;
     }
+
+    /**
+     *
+     * @return true if particles have converged enough to determine a valid location.
+     */
+
+    public boolean hasConverged(){
+
+        calculateMean();
+
+        int counter = 0;
+        int[] particleLocations = new int[nParticles];
+        double diffX, diffY, diffRadius,calcPercentage;
+        Particle2[] convergedParticleArray = savedData.get(savedData.size()-1);
+        double sumX = 0;
+        double sumY = 0;
+        int j = 0;
+
+        for (int i=0 ; i<nParticles; i++){
+            diffX = convergedParticleArray[i].getX() - meanX;
+            diffY = convergedParticleArray[i].getY() - meanY;
+            diffRadius = Math.sqrt(diffX*diffX + diffY*diffY);
+
+            if (diffRadius <= RADIUS) {
+                particleLocations[counter] = i;
+                counter++;
+            }
+        }
+        calcPercentage = counter/nParticles;
+
+        if (calcPercentage >= PERCENTAGE){
+
+            for (int i=0; i<counter; i++){
+                j = particleLocations[i];
+                sumX = sumX + (convergedParticleArray[j].getX()/counter);
+                sumX = sumX + (convergedParticleArray[j].getX()/counter);
+                meanX = sumX;
+                meanY = sumY;
+            }
+
+
+            return true;
+        }
+        else {
+            return false;
+        }
+
+
+
+    }
+
+
 }
