@@ -78,7 +78,7 @@ public class ParticleManager {
 
         saveParticleData();
         //Log.d("converging", "has Converged: " + hasConverged());
-        backTrack();
+
 
     }
     /**
@@ -323,18 +323,33 @@ public class ParticleManager {
     public ArrayList<double[]> backTrack() {
 
         boolean[] trueParent = new boolean[nParticles];
-        int nrTrue = 0;
+
         double trackMean[] = new double[2];
+        boolean[] trueParentCopy = new boolean[nParticles];
+        for (int i=0; i<nParticles; i++){
+            trueParentCopy[i] = true;
+        }
+
+
         //if (hasConverged()) {
-            for (int i = 0; i < savedData.size() - 1; i++) { //the parent of the second iteration is the first iteration
-                Particle2[] trackData = savedData.get(i);
+            for (int i = 1; i < savedData.size() - 2; i++) { //the parent of the second iteration is the first iteration
+                int nrTrue = 0;
+                Particle2[] trackData = savedData.get(savedData.size()-i);
                 trackMean[0] = 0;
                 trackMean[1] = 0;
-                for (Particle2 particle : trackData) {
-
-                    trueParent[particle.getParent()] = true;
+                for (int k=0; k<trackData.length; k++) {
+                    Particle2 particle = trackData[k];
+                    if (trueParentCopy[k]) {
+                        trueParent[particle.getParent()] = true;
+                    }
                 }
-                Particle2[] meanTrackData = savedData.get(i+1);
+                //deep copy
+                for (int l=0;l<trueParentCopy.length; l++ ){
+
+                    trueParentCopy[l] = new Boolean(trueParent[l]);
+                }
+
+                Particle2[] meanTrackData = savedData.get(savedData.size()-1-i);
                 for (int j = 0; j < nParticles; j++) { //count nr of true particles
                     if (trueParent[j]) {
                         trackMean[0] = trackMean[0] + meanTrackData[j].getX();
@@ -342,11 +357,11 @@ public class ParticleManager {
                         nrTrue++;
                     }
                 }
-
-                trackMean[0] = trackMean[0] / nrTrue;
-                trackMean[1] = trackMean[1] / nrTrue;
-                trackedMeanData.add(trackMean);
-
+                double trackMean2[] = new double[2];
+                trackMean2[0] = trackMean[0] / nrTrue;
+                trackMean2[1] = trackMean[1] / nrTrue;
+                trackedMeanData.add(trackMean2);
+                Log.d("nrParticles", "loop nr: " + i + " nrTrue: " + nrTrue);
                 //}
 
             }
