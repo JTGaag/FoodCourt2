@@ -478,14 +478,18 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     private void redrawMap(){
 
-        particleManager.calculateMean();
-
+        //reset bitmap
         bg.eraseColor(android.graphics.Color.TRANSPARENT);
 
+        //Make canvas to draw on
         Canvas canvas = new Canvas(bg);
+
+        //Get all the rectangle chapes (rooms)
         for (Rectangle rec : rectangleMap.getRectangles()) {
             canvas.drawRect((float) (rec.getX() * 50), (float) (rec.getY() * 50), (float) ((rec.getX() + rec.getWidth()) * 50), (float) ((rec.getY() + rec.getHeight()) * 50), paint);
         }
+
+        //Draw cell when converged
         int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
         if ((r >0)&&(r<cellArrayList.size())&&(particleManager.hasConverged())){
             Rectangle rec = cellArrayList.get(r);
@@ -494,8 +498,10 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         }
 
 
+        //Get particles
         Particle2[] tmpParticleArray = particleManager.getParticleArray();
 
+        //Draw particles
         for (Particle2 particle : tmpParticleArray) {
             //canvas.drawLine((float) particle.getOldX() * 50, (float) particle.getOldY() * 50, (float) particle.getX() * 50, (float) particle.getY() * 50, paintMove);
             if (!particle.isDestroyed()) {
@@ -506,10 +512,13 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
         }
 
+        //Draw collision map
         for (LineSegment line : collisionMap.getLineSegments()) {
             canvas.drawLine((float) line.getX1() * 50, (float) line.getY1() * 50, (float) line.getX2() * 50, (float) line.getY2() * 50, paintCollision);
         }
 
+        particleManager.calculateMean();
+        //Draw mean point DONE: calulate mean before hand here
         canvas.drawPoint((float) (particleManager.getMeanX() * 50), (float) (particleManager.getMeanY() * 50), paintMean);
         //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
 
@@ -557,6 +566,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                 canvas.drawLine((float) line.getX1() * 50, (float) line.getY1() * 50, (float) line.getX2() * 50, (float) line.getY2() * 50, paintCollision);
             }
 
+            particleManager.calculateMean();
             canvas.drawPoint((float) (particleManager.getMeanX() * 50), (float) (particleManager.getMeanY() * 50), paintMean);
             //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
 

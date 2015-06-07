@@ -51,7 +51,7 @@
             <EditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal"
+                android:inputType="numberDecimal|numberSigned"
                 android:ems="10"
                 android:id="@+id/editText_direction_combined"
                 android:hint="Direction"/>
@@ -59,7 +59,7 @@
             <EditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal"
+                android:inputType="numberDecimal|numberSigned"
                 android:ems="10"
                 android:id="@+id/editText_distance_combined"
                 android:hint="Distance"/>
