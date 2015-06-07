@@ -322,7 +322,7 @@ public class ParticleManager {
     }
     public ArrayList<double[]> backTrack() {
 
-        boolean[] trueParent = new boolean[nParticles];
+
 
         double trackMean[] = new double[2];
         boolean[] trueParentCopy = new boolean[nParticles];
@@ -333,6 +333,7 @@ public class ParticleManager {
 
         //if (hasConverged()) {
             for (int i = 1; i < savedData.size() - 2; i++) { //the parent of the second iteration is the first iteration
+                boolean[] trueParent = new boolean[nParticles];
                 int nrTrue = 0;
                 Particle2[] trackData = savedData.get(savedData.size()-i);
                 trackMean[0] = 0;
