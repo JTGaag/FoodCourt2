@@ -534,7 +534,8 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
             double[] beginCoordinates = new double[2];
             double[] endCoordinates = new double[2];
 
-            trackedMeanData = particleManager.backTrack();
+            //trackedMeanData = particleManager.backTrack();
+            trackedMeanData = particleManager.backTrack2();
 
             bg.eraseColor(android.graphics.Color.TRANSPARENT);
 
@@ -577,7 +578,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                 beginCoordinates = trackedMeanData.get(i);
                 endCoordinates = trackedMeanData.get(i+1);
                 canvas.drawLine((float) beginCoordinates[0] * 50, (float) beginCoordinates[1] * 50, (float) endCoordinates[0] * 50, (float) endCoordinates[1] * 50, paint);
-                Log.d("trackedCoordinates", "xAxis: " + beginCoordinates[0]*50 + " yAxis: " + beginCoordinates[1]*50 + "xAxis: " + endCoordinates[0]*50 + " yAxis: " + endCoordinates[1]*50);
+                Log.d("trackedCoordinates", "xAxis: " + beginCoordinates[0] + " yAxis: " + beginCoordinates[1] + "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
                 //Log.d("trackedEndCoordinates", "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
             }
 

@@ -30,6 +30,7 @@ public class Particle2 {
         this.x = old.getX();
         this.y = old.getY();
         this.parent = old.getParent();
+        this.destroyed = old.isDestroyed();
     }
 
 

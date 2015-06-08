@@ -64,22 +64,14 @@ public class ParticleManager {
      */
     public void moveAndDistribute(double meanDirection, double directionStd, double meanDistance, double distanceStd){
 
-        Particle2[] tempData = savedData.get(savedData.size()-1);
-//        for(Particle2 par: tempData){
-//            Log.d("Saved before move", "Valid: "+!par.isDestroyed());
-//        }
         moveParticles(meanDirection, directionStd, meanDistance, distanceStd);
 
-        Particle2[] tempData2 = savedData.get(savedData.size()-1);
-//        for(Particle2 par: tempData2){
-//            Log.d("Saved before dist", "Valid: "+!par.isDestroyed());
-//        }
+        saveParticleData();
+
         redistribute();
 
-        saveParticleData();
+
         //Log.d("converging", "has Converged: " + hasConverged());
-
-
     }
     /**
      * resample and redistribute the particles to keep
@@ -92,7 +84,7 @@ public class ParticleManager {
         int j = 0;
         int k =0;
 
-        Particle2[] tempData = savedData.get(savedData.size()-1);
+        //Particle2[] tempData = savedData.get(savedData.size()-1);
 
         //count the nr. of active and destroyed particles and find where they are
         for (int i=0; i<nParticles; i++){
@@ -108,30 +100,18 @@ public class ParticleManager {
         }
         Log.d("Particle Manager", "Active particles: " + activeParticles + " ActiveParticleNumber: " + activeParticlesArray[0]);
 
-//        //                destroyedParticles++;
-////                destroyedParticlesArray[j]= i;
-////                j++;
-//        int randomLocation = (int)(Math.random()*nParticles);
-//
-//        //Log.d("Random", "x: " + randomLocation);
-//        //Log.d("Valid random point", "valid: "+!tempData[randomLocation].isDestroyed());
-//
-//        particleArray[i].setX(tempData[randomLocation].getX());
-//        particleArray[i].setY(tempData[randomLocation].getY());
-//        particleArray[i].setParent(randomLocation);
-//        particleArray[i].activate();
 
         //give a destroyed particle a random position of an active particle and activate it again.
         for (int i=0; i<destroyedParticles; i++){
-            j = destroyedParticlesArray[i];
+            int n = destroyedParticlesArray[i];
 
             int randomLocation = (int)(Math.random()*activeParticles);
             int l = activeParticlesArray[randomLocation];
 
-            particleArray[j].setX(particleArray[l].getX());
-            particleArray[j].setY(particleArray[l].getY());
-            particleArray[j].setParent(l);
-            particleArray[j].activate();
+            particleArray[n].setX(particleArray[l].getX());
+            particleArray[n].setY(particleArray[l].getY());
+            particleArray[n].setParent(particleArray[l].getParent());
+            particleArray[n].activate();
         }
     }
 
@@ -145,17 +125,6 @@ public class ParticleManager {
         }
 
         savedData.add(toSave);
-
-//        for(Particle2 par: toSave){
-//            Log.d("Save data", "Valid: "+!par.isDestroyed());
-//        }
-
-        /*
-        int iets = (savedData.size()-1);
-        Particle2[] tempArray = savedData.get(iets);
-        tempArray[0].getX();
-        savedData.get(0);
-        */
     }
 
     public void initiateParticlesMap(){
@@ -346,7 +315,6 @@ public class ParticleManager {
                 }
                 //deep copy
                 for (int l=0;l<trueParentCopy.length; l++ ){
-
                     trueParentCopy[l] = new Boolean(trueParent[l]);
                 }
 
@@ -368,6 +336,65 @@ public class ParticleManager {
             }
         //}
         return trackedMeanData;
+    }
+
+    public ArrayList<double[]> backTrack2() {
+
+        ArrayList<double[]> trackedMeanData2 = new ArrayList<double[]>();
+
+
+        //Make everything true for first round (if particles are converged
+        //TODO: change to only use particles that are in 90% of mean or something (when converged)
+        boolean[] trueParentCopy = new boolean[nParticles]; //Array to be used to check for parents (will be persistent throughout loops
+        for (int i=0; i<nParticles; i++){
+            trueParentCopy[i] = true;
+        }
+
+        //if (hasConverged()) {
+        for (int i = savedData.size()-1; i >= 0; i--) { //Start with last added datas and going back
+            /*
+            Start with getting all the parents of current step and getting the mean
+             */
+            boolean[] trueParent = new boolean[nParticles]; //New empty data array
+            int nrTrue = 0;
+            Particle2[] trackData = savedData.get(i); //Get data from
+            double trackMean[] = new double[2];
+            trackMean[0] = 0;
+            trackMean[1] = 0;
+            for (int k=0; k<trackData.length; k++) {
+                Particle2 particle = trackData[k];
+                if (trueParentCopy[k] && !particle.isDestroyed()) {
+                    trueParent[particle.getParent()] = true; //Set parent to true
+                    trackMean[0] += particle.getX(); //add x value
+                    Log.d("nrParticles", "loop nr: " + i + " Particle: " + k + " X-value: " + particle.getX() + " Y-value: " + particle.getY());
+                    trackMean[1] += particle.getY(); //add y value
+                    nrTrue++; //add number of points used
+                }
+            }
+
+            /*
+            Calculate mean and add it to list Array
+             */
+            double trackMean2[] = new double[2];
+            trackMean2[0] = trackMean[0] / nrTrue;
+            trackMean2[1] = trackMean[1] / nrTrue;
+            trackedMeanData2.add(trackMean2);
+
+            //deep copy to be used for next itteration round
+            for (int l=0;l<trueParentCopy.length; l++ ){
+                trueParentCopy[l] = new Boolean(trueParent[l]);
+            }
+
+            Log.d("nrParticles", "loop nr: " + i + " nrTrue: " + nrTrue);
+            for (int k=0; k<trackData.length; k++) {
+                Particle2 particle = trackData[k];
+                //Log.d("All Particles", "loop nr: " + i + " Particle: " + k + " X-value: " + particle.getX() + " Y-value: " + particle.getY() + " Parent: " + particle.getParent());
+
+            }
+
+        }
+        //}
+        return trackedMeanData2;
     }
 
 
