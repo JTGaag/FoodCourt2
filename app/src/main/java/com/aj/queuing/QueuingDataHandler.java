@@ -50,10 +50,22 @@ public class QueuingDataHandler {
     private final double GRAVITY_DIF_TRESHOLD = 7.0;
 
     //Step detection constants
-    private final double INITIAL_PEEK_THRESHOLD = 8.0;
-    private final int TIME_DOMAIN_STEPS = 50;
-    private final double ACCELERATION_DIFFERENCE_THRESHOLD_MIN = 2.2;
-    private final double ACCELERATION_DIFFERENCE_THRESHOLD_MAX = 20.0;
+    private double initialPeekThreshold = 8.0;
+    private int timeDomainSteps = 50;
+    private double accelerationDifferenceThresholdMin = 2.2;
+    private double accelerationDifferenceThresholdMax = 20.0;
+
+    //Step detection constants for Queueing
+    private final double INITIAL_PEEK_THRESHOLD_QUEUEING = 8.0;
+    private final int TIME_DOMAIN_STEPS_QUEUEING = 50;
+    private final double ACCELERATION_DIFFERENCE_THRESHOLD_MIN_QUEUEING = 2.2;
+    private final double ACCELERATION_DIFFERENCE_THRESHOLD_MAX_QUEUEING = 20.0;
+
+    //Step detection constants for Localization
+    private final double INITIAL_PEEK_THRESHOLD_LOCALIZATION = 9.0;
+    private final int TIME_DOMAIN_STEPS_LOCALIZATION = 50;
+    private final double ACCELERATION_DIFFERENCE_THRESHOLD_MIN_LOCALIZATION = 3.5;
+    private final double ACCELERATION_DIFFERENCE_THRESHOLD_MAX_LOCALIZATION = 20.0;
 
     //For fourier analyisi
     private final int FOURIER_DOMAIN_RADIUS = 150;
@@ -68,11 +80,24 @@ public class QueuingDataHandler {
      * @param segmentsPerBoundary
      * @param segmentsPerBody
      */
-    public QueuingDataHandler(QueuingListener queuingListener, int pointsPerSegment, int segmentsPerBoundary, int segmentsPerBody) {
+    public QueuingDataHandler(QueuingListener queuingListener, int pointsPerSegment, int segmentsPerBoundary, int segmentsPerBody, boolean queueing) {
         this.queuingListener = queuingListener;
         this.pointsPerSegment = pointsPerSegment;
         this.segmentsPerBoundary = segmentsPerBoundary;
         this.segmentsPerBody = segmentsPerBody;
+
+        if(queueing){
+            initialPeekThreshold = INITIAL_PEEK_THRESHOLD_QUEUEING;
+            timeDomainSteps = TIME_DOMAIN_STEPS_QUEUEING;
+            accelerationDifferenceThresholdMin = ACCELERATION_DIFFERENCE_THRESHOLD_MIN_QUEUEING;
+            accelerationDifferenceThresholdMax = ACCELERATION_DIFFERENCE_THRESHOLD_MAX_QUEUEING;
+        }else{
+            initialPeekThreshold = INITIAL_PEEK_THRESHOLD_LOCALIZATION;
+            timeDomainSteps = TIME_DOMAIN_STEPS_LOCALIZATION;
+            accelerationDifferenceThresholdMin = ACCELERATION_DIFFERENCE_THRESHOLD_MIN_LOCALIZATION;
+            accelerationDifferenceThresholdMax = ACCELERATION_DIFFERENCE_THRESHOLD_MAX_LOCALIZATION;
+        }
+
         initData();
     }
 
@@ -206,12 +231,12 @@ public class QueuingDataHandler {
         for(int i=pointerStart; i<(rawDataSize-pointsPerBoundary); i++){//GO over all data points in analysing segments
 
             //first peek detection
-            if(rawDataBuffer[i-1].getGravityDotProduct()<rawDataBuffer[i].getGravityDotProduct() && rawDataBuffer[i].getGravityDotProduct()>rawDataBuffer[i+1].getGravityDotProduct() && rawDataBuffer[i].getGravityDotProduct()>INITIAL_PEEK_THRESHOLD){
+            if(rawDataBuffer[i-1].getGravityDotProduct()<rawDataBuffer[i].getGravityDotProduct() && rawDataBuffer[i].getGravityDotProduct()>rawDataBuffer[i+1].getGravityDotProduct() && rawDataBuffer[i].getGravityDotProduct()> initialPeekThreshold){
                 int tempMaxIndex = i; //Index of maximum
                 boolean validPattern = true;
 
                 //Loop over next datapoints to find new maximum
-                for(int j=i; j<i+TIME_DOMAIN_STEPS; j++){
+                for(int j=i; j<i+ timeDomainSteps; j++){
                     if(rawDataBuffer[j-1].getGravityDotProduct()<rawDataBuffer[j].getGravityDotProduct() && rawDataBuffer[j].getGravityDotProduct()>rawDataBuffer[j+1].getGravityDotProduct()) {
                         if (rawDataBuffer[j].getGravityDotProduct() > rawDataBuffer[tempMaxIndex].getGravityDotProduct()) {
                             tempMaxIndex = j;
@@ -221,7 +246,7 @@ public class QueuingDataHandler {
 
                 int tempMinIndex = tempMaxIndex;
                 //Loop to find local minimum
-                for(int j=tempMaxIndex; j<i+TIME_DOMAIN_STEPS; j++){
+                for(int j=tempMaxIndex; j<i+ timeDomainSteps; j++){
                     if(rawDataBuffer[j-1].getGravityDotProduct()>rawDataBuffer[j].getGravityDotProduct() && rawDataBuffer[j].getGravityDotProduct()<rawDataBuffer[j+1].getGravityDotProduct()) {
                         if (rawDataBuffer[j].getGravityDotProduct() < rawDataBuffer[tempMinIndex].getGravityDotProduct()) {
                             tempMinIndex = j;
@@ -237,7 +262,7 @@ public class QueuingDataHandler {
                 //Save data
                 if(validPattern){
                     //diff in min and max between min and max threshold
-                    if((rawDataBuffer[tempMaxIndex].getGravityDotProduct()-rawDataBuffer[tempMinIndex].getGravityDotProduct())>ACCELERATION_DIFFERENCE_THRESHOLD_MIN && (rawDataBuffer[tempMaxIndex].getGravityDotProduct()-rawDataBuffer[tempMinIndex].getGravityDotProduct())<ACCELERATION_DIFFERENCE_THRESHOLD_MAX){
+                    if((rawDataBuffer[tempMaxIndex].getGravityDotProduct()-rawDataBuffer[tempMinIndex].getGravityDotProduct())> accelerationDifferenceThresholdMin && (rawDataBuffer[tempMaxIndex].getGravityDotProduct()-rawDataBuffer[tempMinIndex].getGravityDotProduct())< accelerationDifferenceThresholdMax){
 
                         //TODO: Do something here with fourier transform to see if possible step is not a distrubance such as random movement etc.
 
@@ -270,7 +295,7 @@ public class QueuingDataHandler {
                             //Add steps
                             timeOfSteps.add(new Long(rawDataBuffer[i].getTimestamp()));
 
-                            i = i + TIME_DOMAIN_STEPS;
+                            i = i + timeDomainSteps;
                         }
                     }
                 }

@@ -212,7 +212,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         /*
         Initialize all data handlers
          */
-        queuingDataHandler = new QueuingDataHandler(this, 50, 3, 7);
+        queuingDataHandler = new QueuingDataHandler(this, 50, 3, 7, false);
         motionDataHandler = new MotionDataHandler(this);
     }
 
