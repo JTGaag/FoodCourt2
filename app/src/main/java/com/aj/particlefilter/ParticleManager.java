@@ -66,11 +66,9 @@ public class ParticleManager {
 
         moveParticles(meanDirection, directionStd, meanDistance, distanceStd);
 
-        saveParticleData();
-
         redistribute();
 
-
+        saveParticleData();
         //Log.d("converging", "has Converged: " + hasConverged());
     }
     /**
@@ -95,6 +93,7 @@ public class ParticleManager {
             }else{
                 activeParticles++;
                 activeParticlesArray[k] = i;
+                particleArray[i].setParent(i);
                 k++;
             }
         }
@@ -110,7 +109,7 @@ public class ParticleManager {
 
             particleArray[n].setX(particleArray[l].getX());
             particleArray[n].setY(particleArray[l].getY());
-            particleArray[n].setParent(particleArray[l].getParent());
+            particleArray[n].setParent(l);
             particleArray[n].activate();
         }
     }
