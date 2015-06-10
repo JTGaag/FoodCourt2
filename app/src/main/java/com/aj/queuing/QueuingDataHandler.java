@@ -64,7 +64,7 @@ public class QueuingDataHandler {
     //Step detection constants for Localization
     private final double INITIAL_PEEK_THRESHOLD_LOCALIZATION = 9.0;
     private final int TIME_DOMAIN_STEPS_LOCALIZATION = 50;
-    private final double ACCELERATION_DIFFERENCE_THRESHOLD_MIN_LOCALIZATION = 3.5;
+    private final double ACCELERATION_DIFFERENCE_THRESHOLD_MIN_LOCALIZATION = 3.0;
     private final double ACCELERATION_DIFFERENCE_THRESHOLD_MAX_LOCALIZATION = 20.0;
 
     //For fourier analyisi

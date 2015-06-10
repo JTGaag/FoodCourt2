@@ -78,6 +78,8 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     Button buttonMove, buttonMotionDetection, buttonBacktrack;
     Bitmap bg;
 
+    private final int ENLARGE_FACTOR = 100; //50 for EWI building
+
     boolean motionDetection = false;
     Context context = this;
 
@@ -125,7 +127,8 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         buttonBacktrack = (Button)findViewById(R.id.button_backtrack);
 
         //Make maps to be used for distribution and collision
-        makeMaps();
+        //makeMaps();
+        makeMaps2();
 
         //Init bitmap
         bg = Bitmap.createBitmap(3700,1000, Bitmap.Config.ARGB_8888);
@@ -154,27 +157,27 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
         Canvas canvas = new Canvas(bg);
         for (Rectangle rec : rectangleMap.getRectangles()){
-            canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paint);
+            canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paint);
         }
 
         int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
         if ((r >0)&&(r<cellArrayList.size()&&(particleManager.hasConverged()))){
             Rectangle rec = cellArrayList.get(r);
-            canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCell);
-            canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCellStroke);
+            canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paintCell);
+            canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paintCellStroke);
         }
 
 
         for(Particle2 particle : particleArray){
             if(!particle.isDestroyed()) {
-                canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDot);
+                canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDot);
             }else{
-                //canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDotDestroy);
+                //canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDotDestroy);
             }
         }
 
         for(LineSegment line: collisionMap.getLineSegments()){
-            canvas.drawLine((float)line.getX1()*50,(float)line.getY1()*50, (float)line.getX2()*50, (float)line.getY2()*50, paintCollision);
+            canvas.drawLine((float)line.getX1()*ENLARGE_FACTOR,(float)line.getY1()*ENLARGE_FACTOR, (float)line.getX2()*ENLARGE_FACTOR, (float)line.getY2()*ENLARGE_FACTOR, paintCollision);
         }
 
 
@@ -334,7 +337,8 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     @Override
     public void onStepCount(ArrayList<Long> timeOfSteps, long endTime) {
-        //Log.d("Steps", "Number of steps: " + timeOfSteps.size());
+        Log.d("Steps", "Number of steps: " + timeOfSteps.size());
+        tvSteps.setText("number of steps: " + timeOfSteps.size());
         if(motionDetection) {
             motionDataHandler.addSteps(timeOfSteps, endTime);
         }
@@ -486,15 +490,18 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
         //Get all the rectangle chapes (rooms)
         for (Rectangle rec : rectangleMap.getRectangles()) {
-            canvas.drawRect((float) (rec.getX() * 50), (float) (rec.getY() * 50), (float) ((rec.getX() + rec.getWidth()) * 50), (float) ((rec.getY() + rec.getHeight()) * 50), paint);
+            canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paint);
         }
 
         //Draw cell when converged
-        int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
-        if ((r >0)&&(r<cellArrayList.size())&&(particleManager.hasConverged())){
-            Rectangle rec = cellArrayList.get(r);
-            canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCell);
-            canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCellStroke);
+        if(particleManager.hasConverged()) {
+            particleManager.calculateMean();
+            int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
+            if ((r > 0) && (r < cellArrayList.size()) && (particleManager.hasConverged())) {
+                Rectangle rec = cellArrayList.get(r);
+                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paintCell);
+                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paintCellStroke);
+            }
         }
 
 
@@ -503,23 +510,23 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
         //Draw particles
         for (Particle2 particle : tmpParticleArray) {
-            //canvas.drawLine((float) particle.getOldX() * 50, (float) particle.getOldY() * 50, (float) particle.getX() * 50, (float) particle.getY() * 50, paintMove);
+            //canvas.drawLine((float) particle.getOldX() * ENLARGE_FACTOR, (float) particle.getOldY() * ENLARGE_FACTOR, (float) particle.getX() * ENLARGE_FACTOR, (float) particle.getY() * ENLARGE_FACTOR, paintMove);
             if (!particle.isDestroyed()) {
-                canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDot);
+                canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDot);
             } else {
-                //canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDotDestroy);
+                //canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDotDestroy);
             }
 
         }
 
         //Draw collision map
         for (LineSegment line : collisionMap.getLineSegments()) {
-            canvas.drawLine((float) line.getX1() * 50, (float) line.getY1() * 50, (float) line.getX2() * 50, (float) line.getY2() * 50, paintCollision);
+            canvas.drawLine((float) line.getX1() * ENLARGE_FACTOR, (float) line.getY1() * ENLARGE_FACTOR, (float) line.getX2() * ENLARGE_FACTOR, (float) line.getY2() * ENLARGE_FACTOR, paintCollision);
         }
 
         particleManager.calculateMean();
         //Draw mean point DONE: calulate mean before hand here
-        canvas.drawPoint((float) (particleManager.getMeanX() * 50), (float) (particleManager.getMeanY() * 50), paintMean);
+        canvas.drawPoint((float) (particleManager.getMeanX() * ENLARGE_FACTOR), (float) (particleManager.getMeanY() * ENLARGE_FACTOR), paintMean);
         //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
 
 
@@ -541,34 +548,34 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
             Canvas canvas = new Canvas(bg);
             for (Rectangle rec : rectangleMap.getRectangles()) {
-                canvas.drawRect((float) (rec.getX() * 50), (float) (rec.getY() * 50), (float) ((rec.getX() + rec.getWidth()) * 50), (float) ((rec.getY() + rec.getHeight()) * 50), paint);
+                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paint);
             }
             int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
             if ((r >0)&&(r<cellArrayList.size())&&(particleManager.hasConverged())){
                 Rectangle rec = cellArrayList.get(r);
-                canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCell);
-                canvas.drawRect((float)(rec.getX()*50), (float)(rec.getY()*50), (float)((rec.getX() + rec.getWidth())*50), (float)((rec.getY() + rec.getHeight())*50), paintCellStroke);
+                canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paintCell);
+                canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paintCellStroke);
             }
 
 
             Particle2[] tmpParticleArray = particleManager.getParticleArray();
 
             for (Particle2 particle : tmpParticleArray) {
-                //canvas.drawLine((float) particle.getOldX() * 50, (float) particle.getOldY() * 50, (float) particle.getX() * 50, (float) particle.getY() * 50, paintMove);
+                //canvas.drawLine((float) particle.getOldX() * ENLARGE_FACTOR, (float) particle.getOldY() * ENLARGE_FACTOR, (float) particle.getX() * ENLARGE_FACTOR, (float) particle.getY() * ENLARGE_FACTOR, paintMove);
                 if (!particle.isDestroyed()) {
-                    canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDot);
+                    canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDot);
                 } else {
-                    //canvas.drawPoint((float) (particle.getX() * 50), (float) (particle.getY() * 50), paintDotDestroy);
+                    //canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDotDestroy);
                 }
 
             }
 
             for (LineSegment line : collisionMap.getLineSegments()) {
-                canvas.drawLine((float) line.getX1() * 50, (float) line.getY1() * 50, (float) line.getX2() * 50, (float) line.getY2() * 50, paintCollision);
+                canvas.drawLine((float) line.getX1() * ENLARGE_FACTOR, (float) line.getY1() * ENLARGE_FACTOR, (float) line.getX2() * ENLARGE_FACTOR, (float) line.getY2() * ENLARGE_FACTOR, paintCollision);
             }
 
             particleManager.calculateMean();
-            canvas.drawPoint((float) (particleManager.getMeanX() * 50), (float) (particleManager.getMeanY() * 50), paintMean);
+            canvas.drawPoint((float) (particleManager.getMeanX() * ENLARGE_FACTOR), (float) (particleManager.getMeanY() * ENLARGE_FACTOR), paintMean);
             //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
 
 
@@ -577,7 +584,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
             for (int i = 0; i < (trackedMeanData.size()-1); i++) {
                 beginCoordinates = trackedMeanData.get(i);
                 endCoordinates = trackedMeanData.get(i+1);
-                canvas.drawLine((float) beginCoordinates[0] * 50, (float) beginCoordinates[1] * 50, (float) endCoordinates[0] * 50, (float) endCoordinates[1] * 50, paint);
+                canvas.drawLine((float) beginCoordinates[0] * ENLARGE_FACTOR, (float) beginCoordinates[1] * ENLARGE_FACTOR, (float) endCoordinates[0] * ENLARGE_FACTOR, (float) endCoordinates[1] * ENLARGE_FACTOR, paint);
                 Log.d("trackedCoordinates", "xAxis: " + beginCoordinates[0] + " yAxis: " + beginCoordinates[1] + "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
                 //Log.d("trackedEndCoordinates", "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
             }
@@ -585,6 +592,105 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
             //noinspection deprecation
             mImage.setImageBitmap(bg);
         }
+
+
+    protected void makeMaps2(){
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //Collision Map
+        //
+        ////////////////////////////////////////////////////////////////////////
+        lineSegmentArrayList.add(new LineSegment(0, 0, 18.62, 0));//arround1
+        lineSegmentArrayList.add(new LineSegment(0, 0, 0, 7.25));//arround2
+        lineSegmentArrayList.add(new LineSegment(18.62, 0, 18.62, 7.25));//arround3
+        lineSegmentArrayList.add(new LineSegment(0, 7.25, 18.62, 7.25));//arround4
+
+        lineSegmentArrayList.add(new LineSegment(5.045, 0, 5.045, 3.36));//wall Willem/Victor
+        lineSegmentArrayList.add(new LineSegment(9.325, 0, 9.325, 3.36));//wall Jerom/Victor
+        lineSegmentArrayList.add(new LineSegment(13.61, 0, 13.61, 3.36));//wall Jerom/Jork
+
+        lineSegmentArrayList.add(new LineSegment(12.95, 4.62, 12.95, 7.25));//wall Joost/Was
+        lineSegmentArrayList.add(new LineSegment(12.95, 4.62, 15.24, 4.62));//wall Joost/hall
+        lineSegmentArrayList.add(new LineSegment(11.75, 4.62, 11.75, 7.25));//wall meterkast/Was
+        lineSegmentArrayList.add(new LineSegment(11.05, 4.62, 11.05, 7.25));//wall meterkast/hal
+        lineSegmentArrayList.add(new LineSegment(11.05, 4.62, 11.75, 4.62));//wall meterkast/hal
+
+        lineSegmentArrayList.add(new LineSegment(8.1, 4.62, 8.1, 7.25));//wall wc/Douche2
+        lineSegmentArrayList.add(new LineSegment(8.1, 5.09, 9.55, 5.09));//wall wc/legeruimte
+        lineSegmentArrayList.add(new LineSegment(8.1, 4.62, 9.55, 4.62));//wall hall/legeruimte
+        lineSegmentArrayList.add(new LineSegment(9.55, 4.62, 9.55, 5.09));//wall hall/legeruimte
+
+        lineSegmentArrayList.add(new LineSegment(8.1, 6.17, 9.55, 6.17));//wall wc/wc
+
+        lineSegmentArrayList.add(new LineSegment(6.78, 4.94, 6.78, 7.25));//wall douche/douche
+
+        lineSegmentArrayList.add(new LineSegment(5.43, 4.62, 5.43, 7.25));//wall douche/GR
+        lineSegmentArrayList.add(new LineSegment(3.03, 4.62, 5.43, 4.62));//wall hall/GR
+
+        lineSegmentArrayList.add(new LineSegment(0, 3.36, 3.79, 3.36));//wall kamer/hall1
+        //lineSegmentArrayList.add(new LineSegment(3.79, 3.36, 4.765, 3.36));//wall kamer/hall1 Deur willem
+        lineSegmentArrayList.add(new LineSegment(4.765, 3.36, 5.325, 3.36));//wall kamer/hall1 W/V
+        //lineSegmentArrayList.add(new LineSegment(5.325, 3.36, 6.3, 3.36));//wall kamer/hall1 Deur Victor
+        lineSegmentArrayList.add(new LineSegment(6.3, 3.36, 12.355, 3.36));//wall kamer/hall1 J/V
+        //lineSegmentArrayList.add(new LineSegment(12.355, 3.36, 13.33, 3.36));//wall kamer/hall1 Deur Jerom
+        lineSegmentArrayList.add(new LineSegment(13.33, 3.36, 13.89, 3.36));//wall kamer/hall1 J/J
+        //lineSegmentArrayList.add(new LineSegment(13.89, 3.36, 14.865, 3.36));//wall kamer/hall1 Deur Jork
+        lineSegmentArrayList.add(new LineSegment(14.865, 3.36, 18.62, 3.36));//wall kamer/hall1 J/J
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //Rectangle (room) map
+        //
+        ////////////////////////////////////////////////////////////////////////
+        rectangleArrayList.add(new Rectangle(0, 0, 5.045, 3.36));//Willems kamer
+        rectangleArrayList.add(new Rectangle(5.045, 0, 4.28, 3.36));//Victors kamer
+        rectangleArrayList.add(new Rectangle(9.325, 0, 4.285, 3.36));//Jeroms kamer
+        rectangleArrayList.add(new Rectangle(13.61, 0, 5.01, 3.36));//Jorks kamer
+        rectangleArrayList.add(new Rectangle(0, 3.36, 3.03, 3.89));//GR1
+        rectangleArrayList.add(new Rectangle(3.03, 4.62, 2.4, 2.63));//GR2
+        rectangleArrayList.add(new Rectangle(12.95, 4.62, 2.29, 2.63));//Joost1
+        rectangleArrayList.add(new Rectangle(15.24, 3.36, 3.38, 3.89));//Joost2
+
+        rectangleArrayList.add(new Rectangle(3.03, 3.36, 12.21, 1.26));//Hall1
+        rectangleArrayList.add(new Rectangle(5.43, 4.62, 2.67, .32));//Hall2
+        rectangleArrayList.add(new Rectangle(9.55, 4.62, 1.5, 2.63));//Hall3
+
+        rectangleArrayList.add(new Rectangle(11.75, 4.62, 1.2, 2.63));//wasHok
+
+        rectangleArrayList.add(new Rectangle(5.43, 4.94, 1.35, 2.31));//Douche 1
+        rectangleArrayList.add(new Rectangle(6.78, 4.94, 1.32, 2.31));//Douche 2
+
+        rectangleArrayList.add(new Rectangle(8.1, 6.17, 1.45, 1.08));//wc1
+        rectangleArrayList.add(new Rectangle(8.1, 5.09, 1.45, 1.08));//1c2
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //Cell map
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        double difference = 0.8;
+        cellArrayList.add(new Rectangle(2, 6.1, 4, 2.1));   //c19
+        cellArrayList.add(new Rectangle(0, 0, 4, 6.1));     //c18
+        cellArrayList.add(new Rectangle(4, 0, 4, 6.1));     //c17
+        cellArrayList.add(new Rectangle(6, 6.1, 4, 2.1));   //c16
+        cellArrayList.add(new Rectangle(10, 6.1, 4, 2.1));  //c15
+        cellArrayList.add(new Rectangle(14, 6.1, 4, 2.1));  //c14
+        cellArrayList.add(new Rectangle(12, 0, 4, 6.1));    //c13
+        cellArrayList.add(new Rectangle(16, 0, 4, 6.1));    //c12
+        cellArrayList.add(new Rectangle(12, 11.3, 4, 3));   //c11
+        cellArrayList.add(new Rectangle(36-difference, 6.1, 4, 2.1));   //c9
+        cellArrayList.add(new Rectangle(40-difference, 6.1, 4, 2.1));   //c8
+        cellArrayList.add(new Rectangle(44-difference, 6.1, 4, 2.1));   //c7
+        cellArrayList.add(new Rectangle(48-difference, 6.1, 4, 2.1));   //c6
+        cellArrayList.add(new Rectangle(52-difference, 6.1, 4, 2.1));   //c5
+        cellArrayList.add(new Rectangle(56-difference, 6.1, 4, 2.1));   //c4
+        cellArrayList.add(new Rectangle(60-difference, 6.1, 4, 2.1));   //c3
+        cellArrayList.add(new Rectangle(56, 8.2, 4, 6.1));   //c2
+        cellArrayList.add(new Rectangle(60, 8.2, 4, 6.1));   //c1
+
+    }
 
 
 
