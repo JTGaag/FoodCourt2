@@ -365,7 +365,7 @@ public class ParticleManager {
                 if (trueParentCopy[k] && !particle.isDestroyed()) {
                     trueParent[particle.getParent()] = true; //Set parent to true
                     trackMean[0] += particle.getX(); //add x value
-                    Log.d("nrParticles", "loop nr: " + i + " Particle: " + k + " X-value: " + particle.getX() + " Y-value: " + particle.getY());
+                    //Log.d("nrParticles", "loop nr: " + i + " Particle: " + k + " X-value: " + particle.getX() + " Y-value: " + particle.getY());
                     trackMean[1] += particle.getY(); //add y value
                     nrTrue++; //add number of points used
                 }
