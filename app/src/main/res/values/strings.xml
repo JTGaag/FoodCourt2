@@ -11,4 +11,5 @@
     <string name="title_activity_bluetooth_scan">BluetoothScanActivity</string>
     <string name="title_activity_map">MapActivity</string>
     <string name="title_activity_combined">CombinedActivity</string>
+    <string name="title_activity_magnetic_joost">MagneticJoostActivity</string>
 </resources>

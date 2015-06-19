@@ -14,7 +14,7 @@ import java.io.File;
 
 public class MainActivity extends ActionBarActivity {
 
-    Button buttonAcelerometer, buttonGraphs, buttonDeleteFile, buttonGraphsAlexander, buttonGraphsJoost, buttonWifiScanActivity, buttonBluetoothScanActivity, buttonMapActivity, buttonCombinedActivity;
+    Button buttonAcelerometer, buttonGraphs, buttonDeleteFile, buttonGraphsAlexander, buttonGraphsJoost, buttonWifiScanActivity, buttonBluetoothScanActivity, buttonMapActivity, buttonCombinedActivity, buttonMagneticJoostActivity;
     Context context = this;
 
     @Override
@@ -31,6 +31,7 @@ public class MainActivity extends ActionBarActivity {
         buttonBluetoothScanActivity = (Button) findViewById(R.id.button_bluetooth_scan_activity);
         buttonMapActivity = (Button) findViewById(R.id.button_map_activity);
         buttonCombinedActivity = (Button) findViewById(R.id.button_combined_activity);
+        buttonMagneticJoostActivity = (Button) findViewById(R.id.button_magnetic_joost_activity);
 
 
         buttonAcelerometer.setOnClickListener(new View.OnClickListener() {
@@ -104,6 +105,14 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 Intent eventActivity = new Intent(MainActivity.this, CombinedActivity.class);
+                startActivity(eventActivity);
+            }
+        });
+
+        buttonMagneticJoostActivity.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent eventActivity = new Intent(MainActivity.this, MagneticJoostActivity.class);
                 startActivity(eventActivity);
             }
         });

@@ -2,6 +2,7 @@ package com.aj.foodcourt2;
 
 
 import android.content.Context;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -10,6 +11,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
@@ -36,10 +39,13 @@ import com.aj.queuing.MacroBlockObject;
 import com.aj.queuing.QueuingDataHandler;
 import com.aj.queuing.QueuingListener;
 import com.aj.queuing.QueuingSensorData;
+import com.aj.wifi.WifiListener;
+import com.aj.wifi.WifiReceiver;
 
 import java.util.ArrayList;
+import java.util.List;
 
-public class CombinedActivity extends ActionBarActivity implements SensorEventListener, QueuingListener, MotionListener {
+public class CombinedActivity extends ActionBarActivity implements SensorEventListener, QueuingListener, MotionListener, WifiListener {
 
     final String LOG_TAG = "Combinded activity";
 
@@ -50,12 +56,18 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     private Sensor accelerometerSensor;
     private Sensor gyroSensor;
 
+    //Wifi sensors and managers
+    WifiManager wifiManager;
+    WifiReceiver wifiReceiver;
+    long lastWifiScanTime;
+    long scanStartTime;
+
     //magnetometer
     float[] mGravity;
     float[] mGeomagnetic;
     float azimut;
     float degrees;
-    private TextView tvAzimut, tvAzimutDegrees, tvSteps;
+    private TextView tvAzimut, tvAzimutDegrees, tvSteps, tvWifi;
 
     //Constants
     final double NS2S = 1.0/1000000000.0;
@@ -114,10 +126,16 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
 
+        //Wifi shizzle
+        wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        wifiReceiver = new WifiReceiver(this, wifiManager);
+        //registerReceiver(wifiReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+
         //TextViews
         tvAzimut = (TextView) findViewById(R.id.tv_azimut);
         tvAzimutDegrees = (TextView) findViewById(R.id.tv_azimut_degrees);
         tvSteps = (TextView) findViewById(R.id.tv_steps);
+        tvWifi = (TextView) findViewById(R.id.tv_wifi_data);
 
         //Input objects
         etDirection = (EditText)findViewById(R.id.editText_direction_combined);
@@ -191,7 +209,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
             public void onClick(View v) {
                 double direction = Double.parseDouble(etDirection.getText().toString());
                 double distance = Double.parseDouble(etDistance.getText().toString());
-                particleManager.moveAndDistribute(direction, 15, distance, (distance / 10));
+                particleManager.moveAndDistribute(System.currentTimeMillis(), direction, 15, distance, (distance / 10));
 
                 redrawMap();
             }
@@ -228,12 +246,15 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         sensorManager.registerListener(this, magneticSensor, 10000);
         sensorManager.registerListener(this, accelerometerSensor, 10000);
         sensorManager.registerListener(this, gyroSensor, 10000);
+
+        //
+        registerReceiver(wifiReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-
+        unregisterReceiver(wifiReceiver);
         //Unregister sensor listeners
         //TODO: if sensor acrivities are done in a service, look again at this. This may break the sensors in the service
         sensorManager.unregisterListener(this);
@@ -337,11 +358,166 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     @Override
     public void onStepCount(ArrayList<Long> timeOfSteps, long endTime) {
-        Log.d("Steps", "Number of steps: " + timeOfSteps.size());
+        //Log.d("Steps", "Number of steps: " + timeOfSteps.size());
         tvSteps.setText("number of steps: " + timeOfSteps.size());
         if(motionDetection) {
             motionDataHandler.addSteps(timeOfSteps, endTime);
         }
+    }
+
+
+    /**
+     * Called when straight motion has ended or specific time of time has passed.
+     * This method will start the motion in the particle manager
+     *
+     * @param direction direction of detected motion
+     * @param distance  distance of detected motion
+     */
+    @Override
+    public void onMotion(double direction, double distance, long timestamp) {
+        //Log.d(LOG_TAG, "Direction: " + direction + " ; Distance: " + distance);
+        //move particles
+        particleManager.moveAndDistribute(timestamp, direction, 25, distance, distance/8);
+        redrawMap();
+    }
+
+    @Override
+    public void onWifiCheck(long timestamp) {
+        Log.d("WifiState", "State: "+wifiManager.getWifiState());
+        wifiManager.getWifiState();
+        lastWifiScanTime = timestamp;
+        scanStartTime = System.currentTimeMillis();
+        wifiManager.startScan();
+
+    }
+
+    @Override
+    public void onWifiData(List<ScanResult> wifiList){
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Scan time (sec): " + ((System.currentTimeMillis()-scanStartTime)/1000.0));
+        Log.d("scantime", "scanStartTime: " + scanStartTime);
+        stringBuilder.append("\n\n");
+        for(int i=0; i<wifiList.size(); i++){
+            stringBuilder.append(new Integer(i+1).toString() + ": ");
+            stringBuilder.append(wifiList.get(i).BSSID + " : " + wifiList.get(i).SSID + " . " + WifiManager.calculateSignalLevel(wifiList.get(i).level, 255) + " . " + wifiList.get(i).frequency);
+            //stringBuilder.append(wifiList.get(i).toString());
+            stringBuilder.append("\n\n");
+        }
+        tvWifi.setText(stringBuilder.toString());
+        Toast.makeText(getApplicationContext(), "Wifi update", Toast.LENGTH_SHORT).show();
+    }
+
+    private void redrawMap(){
+
+        //reset bitmap
+        bg.eraseColor(android.graphics.Color.TRANSPARENT);
+
+        //Make canvas to draw on
+        Canvas canvas = new Canvas(bg);
+
+        //Get all the rectangle chapes (rooms)
+        for (Rectangle rec : rectangleMap.getRectangles()) {
+            canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paint);
+        }
+
+        //Draw cell when converged
+        if(particleManager.hasConverged()) {
+            particleManager.calculateMean();
+            int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
+            if ((r > 0) && (r < cellArrayList.size()) && (particleManager.hasConverged())) {
+                Rectangle rec = cellArrayList.get(r);
+                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paintCell);
+                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paintCellStroke);
+            }
+        }
+
+
+        //Get particles
+        Particle2[] tmpParticleArray = particleManager.getParticleArray();
+
+        //Draw particles
+        for (Particle2 particle : tmpParticleArray) {
+            //canvas.drawLine((float) particle.getOldX() * ENLARGE_FACTOR, (float) particle.getOldY() * ENLARGE_FACTOR, (float) particle.getX() * ENLARGE_FACTOR, (float) particle.getY() * ENLARGE_FACTOR, paintMove);
+            if (!particle.isDestroyed()) {
+                canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDot);
+            } else {
+                //canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDotDestroy);
+            }
+
+        }
+
+        //Draw collision map
+        for (LineSegment line : collisionMap.getLineSegments()) {
+            canvas.drawLine((float) line.getX1() * ENLARGE_FACTOR, (float) line.getY1() * ENLARGE_FACTOR, (float) line.getX2() * ENLARGE_FACTOR, (float) line.getY2() * ENLARGE_FACTOR, paintCollision);
+        }
+
+        particleManager.calculateMean();
+        //Draw mean point DONE: calulate mean before hand here
+        canvas.drawPoint((float) (particleManager.getMeanX() * ENLARGE_FACTOR), (float) (particleManager.getMeanY() * ENLARGE_FACTOR), paintMean);
+        //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
+
+
+        //noinspection deprecation
+        mImage.setImageBitmap(bg);
+    }
+    public void backTrack(){
+
+
+
+        ArrayList<double[]> trackedMeanData = new ArrayList<double[]>();
+        double[] beginCoordinates = new double[2];
+        double[] endCoordinates = new double[2];
+
+        //trackedMeanData = particleManager.backTrack();
+        trackedMeanData = particleManager.backTrack2();
+
+        bg.eraseColor(android.graphics.Color.TRANSPARENT);
+
+        Canvas canvas = new Canvas(bg);
+        for (Rectangle rec : rectangleMap.getRectangles()) {
+            canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paint);
+        }
+        int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
+        if ((r >0)&&(r<cellArrayList.size())&&(particleManager.hasConverged())){
+            Rectangle rec = cellArrayList.get(r);
+            canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paintCell);
+            canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paintCellStroke);
+        }
+
+
+        Particle2[] tmpParticleArray = particleManager.getParticleArray();
+
+        for (Particle2 particle : tmpParticleArray) {
+            //canvas.drawLine((float) particle.getOldX() * ENLARGE_FACTOR, (float) particle.getOldY() * ENLARGE_FACTOR, (float) particle.getX() * ENLARGE_FACTOR, (float) particle.getY() * ENLARGE_FACTOR, paintMove);
+            if (!particle.isDestroyed()) {
+                canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDot);
+            } else {
+                //canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDotDestroy);
+            }
+
+        }
+
+        for (LineSegment line : collisionMap.getLineSegments()) {
+            canvas.drawLine((float) line.getX1() * ENLARGE_FACTOR, (float) line.getY1() * ENLARGE_FACTOR, (float) line.getX2() * ENLARGE_FACTOR, (float) line.getY2() * ENLARGE_FACTOR, paintCollision);
+        }
+
+        particleManager.calculateMean();
+        canvas.drawPoint((float) (particleManager.getMeanX() * ENLARGE_FACTOR), (float) (particleManager.getMeanY() * ENLARGE_FACTOR), paintMean);
+        //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
+
+
+
+
+        for (int i = 0; i < (trackedMeanData.size()-1); i++) {
+            beginCoordinates = trackedMeanData.get(i);
+            endCoordinates = trackedMeanData.get(i+1);
+            canvas.drawLine((float) beginCoordinates[0] * ENLARGE_FACTOR, (float) beginCoordinates[1] * ENLARGE_FACTOR, (float) endCoordinates[0] * ENLARGE_FACTOR, (float) endCoordinates[1] * ENLARGE_FACTOR, paint);
+            Log.d("trackedCoordinates", "xAxis: " + beginCoordinates[0] + " yAxis: " + beginCoordinates[1] + "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
+            //Log.d("trackedEndCoordinates", "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
+        }
+
+        //noinspection deprecation
+        mImage.setImageBitmap(bg);
     }
 
     protected void makeMaps(){
@@ -465,135 +641,6 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         paintMean.setStrokeWidth(10.0f);
     }
 
-    /**
-     * Called when straight motion has ended or specific time of time has passed.
-     * This method will start the motion in the particle manager
-     *
-     * @param direction direction of detected motion
-     * @param distance  distance of detected motion
-     */
-    @Override
-    public void onMotion(double direction, double distance) {
-        Log.d(LOG_TAG, "Direction: " + direction + " ; Distance: " + distance);
-        //move particles
-        particleManager.moveAndDistribute(direction, 15, distance, distance/8);
-        redrawMap();
-    }
-
-    private void redrawMap(){
-
-        //reset bitmap
-        bg.eraseColor(android.graphics.Color.TRANSPARENT);
-
-        //Make canvas to draw on
-        Canvas canvas = new Canvas(bg);
-
-        //Get all the rectangle chapes (rooms)
-        for (Rectangle rec : rectangleMap.getRectangles()) {
-            canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paint);
-        }
-
-        //Draw cell when converged
-        if(particleManager.hasConverged()) {
-            particleManager.calculateMean();
-            int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
-            if ((r > 0) && (r < cellArrayList.size()) && (particleManager.hasConverged())) {
-                Rectangle rec = cellArrayList.get(r);
-                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paintCell);
-                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paintCellStroke);
-            }
-        }
-
-
-        //Get particles
-        Particle2[] tmpParticleArray = particleManager.getParticleArray();
-
-        //Draw particles
-        for (Particle2 particle : tmpParticleArray) {
-            //canvas.drawLine((float) particle.getOldX() * ENLARGE_FACTOR, (float) particle.getOldY() * ENLARGE_FACTOR, (float) particle.getX() * ENLARGE_FACTOR, (float) particle.getY() * ENLARGE_FACTOR, paintMove);
-            if (!particle.isDestroyed()) {
-                canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDot);
-            } else {
-                //canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDotDestroy);
-            }
-
-        }
-
-        //Draw collision map
-        for (LineSegment line : collisionMap.getLineSegments()) {
-            canvas.drawLine((float) line.getX1() * ENLARGE_FACTOR, (float) line.getY1() * ENLARGE_FACTOR, (float) line.getX2() * ENLARGE_FACTOR, (float) line.getY2() * ENLARGE_FACTOR, paintCollision);
-        }
-
-        particleManager.calculateMean();
-        //Draw mean point DONE: calulate mean before hand here
-        canvas.drawPoint((float) (particleManager.getMeanX() * ENLARGE_FACTOR), (float) (particleManager.getMeanY() * ENLARGE_FACTOR), paintMean);
-        //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
-
-
-        //noinspection deprecation
-        mImage.setImageBitmap(bg);
-    }
-    public void backTrack(){
-
-
-
-            ArrayList<double[]> trackedMeanData = new ArrayList<double[]>();
-            double[] beginCoordinates = new double[2];
-            double[] endCoordinates = new double[2];
-
-            //trackedMeanData = particleManager.backTrack();
-            trackedMeanData = particleManager.backTrack2();
-
-            bg.eraseColor(android.graphics.Color.TRANSPARENT);
-
-            Canvas canvas = new Canvas(bg);
-            for (Rectangle rec : rectangleMap.getRectangles()) {
-                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paint);
-            }
-            int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
-            if ((r >0)&&(r<cellArrayList.size())&&(particleManager.hasConverged())){
-                Rectangle rec = cellArrayList.get(r);
-                canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paintCell);
-                canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paintCellStroke);
-            }
-
-
-            Particle2[] tmpParticleArray = particleManager.getParticleArray();
-
-            for (Particle2 particle : tmpParticleArray) {
-                //canvas.drawLine((float) particle.getOldX() * ENLARGE_FACTOR, (float) particle.getOldY() * ENLARGE_FACTOR, (float) particle.getX() * ENLARGE_FACTOR, (float) particle.getY() * ENLARGE_FACTOR, paintMove);
-                if (!particle.isDestroyed()) {
-                    canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDot);
-                } else {
-                    //canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDotDestroy);
-                }
-
-            }
-
-            for (LineSegment line : collisionMap.getLineSegments()) {
-                canvas.drawLine((float) line.getX1() * ENLARGE_FACTOR, (float) line.getY1() * ENLARGE_FACTOR, (float) line.getX2() * ENLARGE_FACTOR, (float) line.getY2() * ENLARGE_FACTOR, paintCollision);
-            }
-
-            particleManager.calculateMean();
-            canvas.drawPoint((float) (particleManager.getMeanX() * ENLARGE_FACTOR), (float) (particleManager.getMeanY() * ENLARGE_FACTOR), paintMean);
-            //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
-
-
-
-
-            for (int i = 0; i < (trackedMeanData.size()-1); i++) {
-                beginCoordinates = trackedMeanData.get(i);
-                endCoordinates = trackedMeanData.get(i+1);
-                canvas.drawLine((float) beginCoordinates[0] * ENLARGE_FACTOR, (float) beginCoordinates[1] * ENLARGE_FACTOR, (float) endCoordinates[0] * ENLARGE_FACTOR, (float) endCoordinates[1] * ENLARGE_FACTOR, paint);
-                Log.d("trackedCoordinates", "xAxis: " + beginCoordinates[0] + " yAxis: " + beginCoordinates[1] + "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
-                //Log.d("trackedEndCoordinates", "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
-            }
-
-            //noinspection deprecation
-            mImage.setImageBitmap(bg);
-        }
-
-
     protected void makeMaps2(){
         ////////////////////////////////////////////////////////////////////////
         //
@@ -628,13 +675,13 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         lineSegmentArrayList.add(new LineSegment(3.03, 4.62, 5.43, 4.62));//wall hall/GR
 
         lineSegmentArrayList.add(new LineSegment(0, 3.36, 3.79, 3.36));//wall kamer/hall1
-        //lineSegmentArrayList.add(new LineSegment(3.79, 3.36, 4.765, 3.36));//wall kamer/hall1 Deur willem
+        lineSegmentArrayList.add(new LineSegment(3.79, 3.36, 4.765, 3.36));//wall kamer/hall1 Deur willem
         lineSegmentArrayList.add(new LineSegment(4.765, 3.36, 5.325, 3.36));//wall kamer/hall1 W/V
         //lineSegmentArrayList.add(new LineSegment(5.325, 3.36, 6.3, 3.36));//wall kamer/hall1 Deur Victor
         lineSegmentArrayList.add(new LineSegment(6.3, 3.36, 12.355, 3.36));//wall kamer/hall1 J/V
         //lineSegmentArrayList.add(new LineSegment(12.355, 3.36, 13.33, 3.36));//wall kamer/hall1 Deur Jerom
         lineSegmentArrayList.add(new LineSegment(13.33, 3.36, 13.89, 3.36));//wall kamer/hall1 J/J
-        //lineSegmentArrayList.add(new LineSegment(13.89, 3.36, 14.865, 3.36));//wall kamer/hall1 Deur Jork
+        lineSegmentArrayList.add(new LineSegment(13.89, 3.36, 14.865, 3.36));//wall kamer/hall1 Deur Jork
         lineSegmentArrayList.add(new LineSegment(14.865, 3.36, 18.62, 3.36));//wall kamer/hall1 J/J
 
 
@@ -643,10 +690,10 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         //Rectangle (room) map
         //
         ////////////////////////////////////////////////////////////////////////
-        rectangleArrayList.add(new Rectangle(0, 0, 5.045, 3.36));//Willems kamer
+        //rectangleArrayList.add(new Rectangle(0, 0, 5.045, 3.36));//Willems kamer
         rectangleArrayList.add(new Rectangle(5.045, 0, 4.28, 3.36));//Victors kamer
         rectangleArrayList.add(new Rectangle(9.325, 0, 4.285, 3.36));//Jeroms kamer
-        rectangleArrayList.add(new Rectangle(13.61, 0, 5.01, 3.36));//Jorks kamer
+        //rectangleArrayList.add(new Rectangle(13.61, 0, 5.01, 3.36));//Jorks kamer
         rectangleArrayList.add(new Rectangle(0, 3.36, 3.03, 3.89));//GR1
         rectangleArrayList.add(new Rectangle(3.03, 4.62, 2.4, 2.63));//GR2
         rectangleArrayList.add(new Rectangle(12.95, 4.62, 2.29, 2.63));//Joost1

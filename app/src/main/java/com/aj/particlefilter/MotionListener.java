@@ -10,7 +10,8 @@ public interface MotionListener {
      * @param direction direction of detected motion
      * @param distance distance of detected motion
      */
-    public void onMotion(double direction, double distance);
+    public void onMotion(double direction, double distance, long timestamp);
 
+    public void onWifiCheck(long timestamp);
 
 }

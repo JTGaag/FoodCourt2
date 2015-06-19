@@ -64,6 +64,11 @@
                 android:layout_height="wrap_content"
                 android:text="Combined"
                 android:id="@+id/button_combined_activity" />
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Magnetic Joost"
+                android:id="@+id/button_magnetic_joost_activity" />
 
 
         </LinearLayout>

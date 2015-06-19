@@ -29,10 +29,11 @@ public class MotionDataHandler {
 
     //Constants
     final double NS2S = 1.0/1000000000.0;
-    final double TIME_LIMIT = 10.0; //time limit in seconds when new motion needs to ben calculated and updated.
-    final double ROTATION_LIMIT = 40.0; // Rotation limit in degrees when motion needs to be updated
-    final double BUILDING_ROTATION_OFFSET_DEG = 156.5; //ROtation offset from true north to posiitve x-axis of map
-    final double DISTANCE_PER_STEP = 0.72;
+    final double TIME_LIMIT = 4.0; //time limit in seconds when new motion needs to ben calculated and updated.
+    final double ROTATION_LIMIT = 60.0; // Rotation limit in degrees when motion needs to be updated
+    final double BUILDING_ROTATION_OFFSET_DEG = 220; //ROtation offset from true north to posiitve x-axis of map (EWI: 156.5; RDW:246.8 (220))
+    final double DISTANCE_PER_STEP = 0.67;
+    final int ROTATION_POINTS = 100;
 
     public MotionDataHandler(MotionListener motionListener) {
         this.motionListener = motionListener;
@@ -91,6 +92,7 @@ public class MotionDataHandler {
         //Check time constrain
         if((gyroDataArrayList.get(gyroDataArrayList.size()-1).getTimestamp()-lastCalculationTime)*NS2S > TIME_LIMIT){
             Log.d(LOG_TAG, "Time triggered motion calculation");
+            timeForCalculations = gyroDataArrayList.get(gyroDataArrayList.size()-1).getTimestamp();
             return true;
         }
 
@@ -101,6 +103,11 @@ public class MotionDataHandler {
             if(Math.abs(sumRotation) > ROTATION_LIMIT){
                 Log.d(LOG_TAG, "Rotation triggered motion calculation. Rotation: " + sumRotation);
                 //NOTNEEDED: Block rotation calculation for a period of time
+                if(gyroDataArrayList.size()-1>ROTATION_POINTS) {
+                    timeForCalculations = Math.max(gyroDataArrayList.get(i).getTimestamp(), gyroDataArrayList.get(gyroDataArrayList.size()-1-ROTATION_POINTS).getTimestamp());
+                }else{
+                    timeForCalculations = gyroDataArrayList.get(i).getTimestamp();
+                }
                 return true;
             }
         }
@@ -151,14 +158,14 @@ public class MotionDataHandler {
     private void doCalculation(){
 
         //Update buffers to use for calculations
-        makeBuffers(newCalculationTime);
+        makeBuffers(timeForCalculations);
 
         //TODO: what to do with rotation (screwing up angles)
         //TODO: what if two calculations steps is needed between step gathering
 
         double direction = meanDirection() + BUILDING_ROTATION_OFFSET_DEG;
         double distance = numberOfStepsInMotion * DISTANCE_PER_STEP;
-        motionListener.onMotion(direction, distance);
+        motionListener.onMotion(direction, distance, newCalculationTime);
 
         //Reset request boolean TODO: FIx with extra check for second calculation before getting step data
         calculationRequest = false;
@@ -180,6 +187,7 @@ public class MotionDataHandler {
             if(isCalculationNeeded()){
                 calculationRequest = true;
                 newCalculationTime = gyroData.getTimestamp();
+                motionListener.onWifiCheck(newCalculationTime);
                 lastCalculationTime = newCalculationTime;
             }
         }

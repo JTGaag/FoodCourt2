@@ -24,8 +24,10 @@ public class ParticleManager {
     Context context;
     final int RADIUS = 4;
     final double PERCENTAGE = 0.90;
+    long saveTimestamp = 0;
 
     private ArrayList<Particle2[]> savedData = new ArrayList<Particle2[]>();
+    private ArrayList<Long> savedTimestamps = new ArrayList<Long>();
 
     public ArrayList<double[]> trackedMeanData = new ArrayList<double[]>();
 
@@ -62,8 +64,8 @@ public class ParticleManager {
      * @param meanDistance
      * @param distanceStd
      */
-    public void moveAndDistribute(double meanDirection, double directionStd, double meanDistance, double distanceStd){
-
+    public void moveAndDistribute(long timestamp, double meanDirection, double directionStd, double meanDistance, double distanceStd){
+        this.saveTimestamp = timestamp;
         moveParticles(meanDirection, directionStd, meanDistance, distanceStd);
 
         redistribute();
@@ -124,6 +126,7 @@ public class ParticleManager {
         }
 
         savedData.add(toSave);
+        savedTimestamps.add(saveTimestamp);
     }
 
     public void initiateParticlesMap(){
