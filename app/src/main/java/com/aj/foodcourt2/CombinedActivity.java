@@ -35,19 +35,29 @@ import com.aj.particlefilter.MotionListener;
 import com.aj.particlefilter.Particle2;
 import com.aj.particlefilter.ParticleManager;
 import com.aj.particlefilter.Rectangle;
+import com.aj.particlefilter.TimePositionData;
 import com.aj.queuing.MacroBlockObject;
 import com.aj.queuing.QueuingDataHandler;
 import com.aj.queuing.QueuingListener;
 import com.aj.queuing.QueuingSensorData;
+import com.aj.server.ASyncServerReturn;
+import com.aj.server.AsyncHttpPost;
+import com.aj.wifi.WifiData;
 import com.aj.wifi.WifiListener;
+import com.aj.wifi.WifiPositionData;
 import com.aj.wifi.WifiReceiver;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
-public class CombinedActivity extends ActionBarActivity implements SensorEventListener, QueuingListener, MotionListener, WifiListener {
+public class CombinedActivity extends ActionBarActivity implements SensorEventListener, QueuingListener, MotionListener, WifiListener, ASyncServerReturn {
 
-    final String LOG_TAG = "Combinded activity";
+    final String LOG_TAG = "Combined activity";
 
     //sensors
     private SensorManager sensorManager;
@@ -61,6 +71,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     WifiReceiver wifiReceiver;
     long lastWifiScanTime;
     long scanStartTime;
+    ArrayList<WifiData> wifiDataArrayList = new ArrayList<WifiData>();
 
     //magnetometer
     float[] mGravity;
@@ -87,7 +98,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     //Stuff
     EditText etDirection, etDistance;
-    Button buttonMove, buttonMotionDetection, buttonBacktrack;
+    Button buttonMove, buttonMotionDetection, buttonBacktrack, buttonGetWifiData;
     Bitmap bg;
 
     private final int ENLARGE_FACTOR = 100; //50 for EWI building
@@ -143,6 +154,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         buttonMove = (Button)findViewById(R.id.button_move_combined);
         buttonMotionDetection = (Button)findViewById(R.id.button_motion_detection);
         buttonBacktrack = (Button)findViewById(R.id.button_backtrack);
+        buttonGetWifiData = (Button)findViewById(R.id.button_get_wifi_data);
 
         //Make maps to be used for distribution and collision
         //makeMaps();
@@ -227,6 +239,17 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
             @Override
             public void onClick(View view) {
                 backTrack();
+            }
+        });
+
+        buttonGetWifiData.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                HashMap<String, String> postData = new HashMap<String, String>();
+                postData.put("building_id", "3");
+
+                AsyncHttpPost asyncHttpPost = new AsyncHttpPost(CombinedActivity.this, postData);
+                asyncHttpPost.execute("https://trimbl-registration.herokuapp.com/wifi/showforbuilding");
             }
         });
 
@@ -405,6 +428,127 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         }
         tvWifi.setText(stringBuilder.toString());
         Toast.makeText(getApplicationContext(), "Wifi update", Toast.LENGTH_SHORT).show();
+
+        //Check if timestamp is already in list else add wifi data to list (check is needed for random wifi upadtes by android od. if not doing this wifiData is saved without knowing where it is saved)
+        boolean notInList = true;
+        for(WifiData wifiData : wifiDataArrayList){
+            if(wifiData.getTimestamp() == lastWifiScanTime){
+                notInList = false;
+            }
+        }
+
+        //If not already in List add wifi list to arraylist
+        if(notInList){
+            wifiDataArrayList.add(new WifiData(lastWifiScanTime, wifiList));
+        }
+    }
+
+
+    @Override
+    public void onJSONReturn(JSONObject json) {
+        if(json!=null) {
+            //Log.d("Json Object from server", "JSON: " + json.toString());
+            try {
+                int response_code = json.getInt("response_code");
+                switch(response_code){
+                    case 1:
+
+                        break;
+                    case 2:
+                        /*
+                        HOW WIFIDATA is Saved:
+
+                        -BASE (JSONObject):
+                            -response_code (integer)
+                            -error (boolean)
+                            -response (JSONArray):
+                                -WifiAndPositionData (JSONObject):
+                                    -x_position (double)
+                                    -y_position (double)
+                                    -wifi_list (JSONArray):
+                                        -wifi information (JSONObject):
+                                            -BSSID (string)
+                                            -SSID (string)
+                                            -level (integer)
+                         */
+
+                        JSONArray results = json.getJSONArray("response");
+                        int numberOfResponse = results.length();
+                        Log.d(LOG_TAG, "WIFI response list length: " + numberOfResponse);
+                        for(int i=0; i<numberOfResponse; i++){
+                            JSONObject jsonObject = results.getJSONObject(i);
+                            //Log.d(LOG_TAG, "WIFI object: " + jsonObject.toString());
+                            String wifiListString = jsonObject.getString("wifi_list");
+                            //Remove ' " ' at the beginning and end to cast it in JSONArray
+                            wifiListString = wifiListString.substring(1,wifiListString.length()-1);
+                            //Log.d(LOG_TAG, "WIFI list string: " + wifiListString);
+                            JSONArray wifiList = new JSONArray(wifiListString.toString());
+                            Log.d(LOG_TAG, "WIFI list: " + wifiList.toString());
+                        }
+
+                        break;
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }else{
+            Log.d("Json Object from server", "NULL object");
+        }
+    }
+
+    private void sendWifiDataToServer(){
+        /*
+        BUILDING ID
+        1: EWI
+        2: RDW
+        3: Others
+         */
+
+        //Variables needed
+        ArrayList<WifiPositionData> wifiPositionToSend = new ArrayList<>();
+        ArrayList<TimePositionData> timePositionFromBacktrack = particleManager.backTrack2();
+
+        //Connect wifi data with position
+        for(WifiData wifiData: wifiDataArrayList){//Loop over all wifi data to get
+            for(TimePositionData timePositionData: timePositionFromBacktrack){
+                if(wifiData.getTimestamp() == timePositionData.getTimestamp()){
+                    wifiPositionToSend.add(new WifiPositionData(wifiData, timePositionData));
+                }
+            }
+        }
+
+        //Check if still a list with
+        if(wifiPositionToSend.size()<1){
+            Log.d(LOG_TAG, "WiFi list is empty no things to be saved");
+            return;
+        }
+
+        JSONArray jsonWifiArray = new JSONArray();
+
+        for(WifiPositionData wifiPositionData: wifiPositionToSend){
+            JSONObject tempJSON = new JSONObject();
+            try {
+                tempJSON.put("x_pos", wifiPositionData.getTimePositionData().getxPosition());
+                tempJSON.put("y_pos", wifiPositionData.getTimePositionData().getyPosition());
+                tempJSON.put("wifi_list", wifiPositionData.getWifiData().getWifiListJSONArray().toString());
+                Log.d("wifi_list", "wifi_list: " + wifiPositionData.getWifiData().getWifiListJSONArray().toString());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            jsonWifiArray.put(tempJSON);
+        }
+        Log.d("wifi_data_array", "wifi_data_array: " + jsonWifiArray.toString());
+
+        //send to Server
+        HashMap<String, String> postData = new HashMap<String, String>();
+        postData.put("building_id", "3");
+        postData.put("phone_id", "Joost_phone");
+        //Add wifi array
+        postData.put("wifi_data_array", jsonWifiArray.toString());
+
+        AsyncHttpPost asyncHttpPost = new AsyncHttpPost(CombinedActivity.this, postData);
+        asyncHttpPost.execute("https://trimbl-registration.herokuapp.com/wifi/addwifidata");
     }
 
     private void redrawMap(){
@@ -462,9 +606,9 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     }
     public void backTrack(){
 
+        sendWifiDataToServer();
 
-
-        ArrayList<double[]> trackedMeanData = new ArrayList<double[]>();
+        ArrayList<TimePositionData> trackedMeanData;
         double[] beginCoordinates = new double[2];
         double[] endCoordinates = new double[2];
 
@@ -509,8 +653,10 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
 
         for (int i = 0; i < (trackedMeanData.size()-1); i++) {
-            beginCoordinates = trackedMeanData.get(i);
-            endCoordinates = trackedMeanData.get(i+1);
+            beginCoordinates[0] = trackedMeanData.get(i).getxPosition();
+            beginCoordinates[1] = trackedMeanData.get(i).getyPosition();
+            endCoordinates[0] = trackedMeanData.get(i+1).getxPosition();
+            endCoordinates[1] = trackedMeanData.get(i+1).getyPosition();
             canvas.drawLine((float) beginCoordinates[0] * ENLARGE_FACTOR, (float) beginCoordinates[1] * ENLARGE_FACTOR, (float) endCoordinates[0] * ENLARGE_FACTOR, (float) endCoordinates[1] * ENLARGE_FACTOR, paint);
             Log.d("trackedCoordinates", "xAxis: " + beginCoordinates[0] + " yAxis: " + beginCoordinates[1] + "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
             //Log.d("trackedEndCoordinates", "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
@@ -738,7 +884,6 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         cellArrayList.add(new Rectangle(60, 8.2, 4, 6.1));   //c1
 
     }
-
 
 
 }

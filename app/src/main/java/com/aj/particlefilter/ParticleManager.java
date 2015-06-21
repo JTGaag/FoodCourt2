@@ -294,14 +294,11 @@ public class ParticleManager {
 
     public ArrayList<double[]> backTrack() {
 
-
-
         double trackMean[] = new double[2];
         boolean[] trueParentCopy = new boolean[nParticles];
         for (int i=0; i<nParticles; i++){
             trueParentCopy[i] = true;
         }
-
 
         //if (hasConverged()) {
             for (int i = 1; i < savedData.size() - 2; i++) { //the parent of the second iteration is the first iteration
@@ -341,10 +338,9 @@ public class ParticleManager {
         return trackedMeanData;
     }
 
-    public ArrayList<double[]> backTrack2() {
+    public ArrayList<TimePositionData> backTrack2() {
 
-        ArrayList<double[]> trackedMeanData2 = new ArrayList<double[]>();
-
+        ArrayList<TimePositionData> trackedMeanData2 = new ArrayList<TimePositionData>();
 
         //Make everything true for first round (if particles are converged
         //TODO: change to only use particles that are in 90% of mean or something (when converged)
@@ -381,18 +377,12 @@ public class ParticleManager {
             double trackMean2[] = new double[2];
             trackMean2[0] = trackMean[0] / nrTrue;
             trackMean2[1] = trackMean[1] / nrTrue;
-            trackedMeanData2.add(trackMean2);
+            TimePositionData dataObj = new TimePositionData(savedTimestamps.get(i), trackMean2[0], trackMean2[1]);
+            trackedMeanData2.add(dataObj);
 
             //deep copy to be used for next itteration round
             for (int l=0;l<trueParentCopy.length; l++ ){
                 trueParentCopy[l] = new Boolean(trueParent[l]);
-            }
-
-            Log.d("nrParticles", "loop nr: " + i + " nrTrue: " + nrTrue);
-            for (int k=0; k<trackData.length; k++) {
-                Particle2 particle = trackData[k];
-                //Log.d("All Particles", "loop nr: " + i + " Particle: " + k + " X-value: " + particle.getX() + " Y-value: " + particle.getY() + " Parent: " + particle.getParent());
-
             }
 
         }
