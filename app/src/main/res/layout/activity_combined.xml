@@ -36,11 +36,25 @@
                     android:id="@+id/tv_azimut_degrees"
                     android:gravity="right"/>
             </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-            <TextView android:text="@string/hello_world"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/tv_steps"/>
+                <TextView android:text="@string/hello_world"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/tv_steps"
+                    android:layout_gravity="left"
+                    android:layout_weight="1"/>
+
+                <TextView android:text="@string/hello_world"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/tv_step_mode"
+                    android:gravity="right"/>
+            </LinearLayout>
+
+
 
             <com.aj.map.TouchImageView
                 android:id="@+id/floor_map_zoom"
@@ -92,12 +106,31 @@
 
             </LinearLayout>
 
-            <Button
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Get WiFi Data"
-                android:id="@+id/button_get_wifi_data"
-                android:layout_gravity="center_horizontal" />
+                android:orientation="horizontal">
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Start"
+                    android:id="@+id/button_step_start"
+                    android:layout_gravity="center_horizontal" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Get WiFi Data"
+                    android:id="@+id/button_get_wifi_data"
+                    android:layout_gravity="center_horizontal" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Stop"
+                    android:id="@+id/button_step_stop"
+                    android:layout_gravity="center_horizontal" />
+            </LinearLayout>
 
             <TextView android:text="@string/hello_world"
                 android:layout_width="wrap_content"

@@ -31,8 +31,8 @@ public class MotionDataHandler {
     final double NS2S = 1.0/1000000000.0;
     final double TIME_LIMIT = 4.0; //time limit in seconds when new motion needs to ben calculated and updated.
     final double ROTATION_LIMIT = 60.0; // Rotation limit in degrees when motion needs to be updated
-    final double BUILDING_ROTATION_OFFSET_DEG = 220; //ROtation offset from true north to posiitve x-axis of map (EWI: 156.5; RDW:246.8 (220))
-    final double DISTANCE_PER_STEP = 0.67;
+    final double BUILDING_ROTATION_OFFSET_DEG = 176.5; //ROtation offset from true north to posiitve x-axis of map (EWI: 176.5; RDW:246.8 (220))
+    final double DISTANCE_PER_STEP = 0.65;
     final int ROTATION_POINTS = 100;
 
     public MotionDataHandler(MotionListener motionListener) {

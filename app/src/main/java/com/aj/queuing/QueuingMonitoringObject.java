@@ -15,7 +15,7 @@ public class QueuingMonitoringObject {
     }
 
     private void analyseAll(){
-
+        //TODO: Check for length of 1
         //Loop over alle loststaande walkings en verander deze naar moving
         for(int i=0; i< blockArray.length; i++){
             if(blockArray[i].getBlockMacroState()== MacroBlockObject.MacroState.WALKING){

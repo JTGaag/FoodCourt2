@@ -69,6 +69,11 @@
                 android:layout_height="wrap_content"
                 android:text="Magnetic Joost"
                 android:id="@+id/button_magnetic_joost_activity" />
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Queuing"
+                android:id="@+id/button_queuing_activity" />
 
 
         </LinearLayout>

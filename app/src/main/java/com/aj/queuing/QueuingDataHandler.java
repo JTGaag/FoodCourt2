@@ -32,6 +32,8 @@ public class QueuingDataHandler {
     private int pointsPerBody;
     private int stepCount;
 
+    private int queuingMode = 1;
+
     //Storage arrays
     private QueuingSensorData[] rawData;
     private QueuingSensorData[] rawDataBuffer;
@@ -68,7 +70,7 @@ public class QueuingDataHandler {
     private final double ACCELERATION_DIFFERENCE_THRESHOLD_MAX_LOCALIZATION = 20.0;
 
     //For fourier analyisi
-    private final int FOURIER_DOMAIN_RADIUS = 150;
+    private final int FOURIER_DOMAIN_RADIUS = 50; //Normal 150
 
 
     //Constructor for Handler also run initiation method
@@ -80,22 +82,56 @@ public class QueuingDataHandler {
      * @param segmentsPerBoundary
      * @param segmentsPerBody
      */
-    public QueuingDataHandler(QueuingListener queuingListener, int pointsPerSegment, int segmentsPerBoundary, int segmentsPerBody, boolean queueing) {
+    public QueuingDataHandler(QueuingListener queuingListener, int pointsPerSegment, int segmentsPerBoundary, int segmentsPerBody, int queueingMode) {
         this.queuingListener = queuingListener;
         this.pointsPerSegment = pointsPerSegment;
         this.segmentsPerBoundary = segmentsPerBoundary;
         this.segmentsPerBody = segmentsPerBody;
+        this.queuingMode = queueingMode;
 
-        if(queueing){
-            initialPeekThreshold = INITIAL_PEEK_THRESHOLD_QUEUEING;
-            timeDomainSteps = TIME_DOMAIN_STEPS_QUEUEING;
-            accelerationDifferenceThresholdMin = ACCELERATION_DIFFERENCE_THRESHOLD_MIN_QUEUEING;
-            accelerationDifferenceThresholdMax = ACCELERATION_DIFFERENCE_THRESHOLD_MAX_QUEUEING;
-        }else{
-            initialPeekThreshold = INITIAL_PEEK_THRESHOLD_LOCALIZATION;
-            timeDomainSteps = TIME_DOMAIN_STEPS_LOCALIZATION;
-            accelerationDifferenceThresholdMin = ACCELERATION_DIFFERENCE_THRESHOLD_MIN_LOCALIZATION;
-            accelerationDifferenceThresholdMax = ACCELERATION_DIFFERENCE_THRESHOLD_MAX_LOCALIZATION;
+        switch(queueingMode){
+            case 1: //Queuing first
+                initialPeekThreshold = INITIAL_PEEK_THRESHOLD_QUEUEING;
+                timeDomainSteps = TIME_DOMAIN_STEPS_QUEUEING;
+                accelerationDifferenceThresholdMin = ACCELERATION_DIFFERENCE_THRESHOLD_MIN_QUEUEING;
+                accelerationDifferenceThresholdMax = ACCELERATION_DIFFERENCE_THRESHOLD_MAX_QUEUEING;
+                break;
+            case 2: //Localization first
+                initialPeekThreshold = INITIAL_PEEK_THRESHOLD_LOCALIZATION;
+                timeDomainSteps = TIME_DOMAIN_STEPS_LOCALIZATION;
+                accelerationDifferenceThresholdMin = ACCELERATION_DIFFERENCE_THRESHOLD_MIN_LOCALIZATION;
+                accelerationDifferenceThresholdMax = ACCELERATION_DIFFERENCE_THRESHOLD_MAX_LOCALIZATION;
+                break;
+            case 3: //Step counting Joost
+                initialPeekThreshold = 9.5; //9.8
+                timeDomainSteps = TIME_DOMAIN_STEPS_LOCALIZATION;
+                accelerationDifferenceThresholdMin = 3.2;
+                accelerationDifferenceThresholdMax = ACCELERATION_DIFFERENCE_THRESHOLD_MAX_LOCALIZATION;
+                break;
+            case 4: //Step counting Jork
+                initialPeekThreshold = 10.0;
+                timeDomainSteps = TIME_DOMAIN_STEPS_LOCALIZATION;
+                accelerationDifferenceThresholdMin = 3.0;
+                accelerationDifferenceThresholdMax = ACCELERATION_DIFFERENCE_THRESHOLD_MAX_LOCALIZATION;
+                break;
+            case 5: //Step counting Willem
+                initialPeekThreshold = 8.5;
+                timeDomainSteps = TIME_DOMAIN_STEPS_LOCALIZATION;
+                accelerationDifferenceThresholdMin = 2.5;
+                accelerationDifferenceThresholdMax = ACCELERATION_DIFFERENCE_THRESHOLD_MAX_LOCALIZATION;
+                break;
+            case 6: //Step counting Alexander
+                initialPeekThreshold = 9.0;
+                timeDomainSteps = TIME_DOMAIN_STEPS_LOCALIZATION;
+                accelerationDifferenceThresholdMin = 3.0;
+                accelerationDifferenceThresholdMax = ACCELERATION_DIFFERENCE_THRESHOLD_MAX_LOCALIZATION;
+                break;
+            default:
+                initialPeekThreshold = INITIAL_PEEK_THRESHOLD_LOCALIZATION;
+                timeDomainSteps = TIME_DOMAIN_STEPS_LOCALIZATION;
+                accelerationDifferenceThresholdMin = ACCELERATION_DIFFERENCE_THRESHOLD_MIN_LOCALIZATION;
+                accelerationDifferenceThresholdMax = ACCELERATION_DIFFERENCE_THRESHOLD_MAX_LOCALIZATION;
+                break;
         }
 
         initData();
@@ -109,10 +145,10 @@ public class QueuingDataHandler {
         pointsPerBody = pointsPerSegment*(segmentsPerBody);
 
         //Checks
-        if(pointsPerBoundary<GRAVITY_TIME_DIF){
-            Log.e("DataBlock error","Not enough boundary points for gravity shift determination, resizing bounderies");
-            pointsPerBoundary = GRAVITY_TIME_DIF;
-        }
+//        if(pointsPerBoundary<GRAVITY_TIME_DIF){
+//            Log.e("DataBlock error","Not enough boundary points for gravity shift determination, resizing bounderies");
+//            pointsPerBoundary = GRAVITY_TIME_DIF;
+//        }
         if(pointsPerBody<2*pointsPerBoundary){
             Log.e("DataBlock error","Not enough body points, resizing body");
             pointsPerBody = 2*pointsPerBoundary;
@@ -142,7 +178,7 @@ public class QueuingDataHandler {
                     rawDataPointer++;
                     if(rawDataPointer==rawDataSize){//Array is full, time to do analysis and shift array
                         copyDataBuffer();
-                        calculateGravityShift();
+                        //calculateGravityShift();
                         calculateSteps();
 
                         //Send steps
@@ -165,7 +201,7 @@ public class QueuingDataHandler {
                     if(rawDataPointer==rawDataSize){//Array is full, time to do analysis and shift array
                         copyDataBuffer();
                         long startTime = System.currentTimeMillis();
-                        calculateGravityShift();
+                        //calculateGravityShift();
                         calculateSteps();
 
                         //Send steps
@@ -285,7 +321,20 @@ public class QueuingDataHandler {
                             rawDataBuffer[tempMinIndex].setNoStepNoise(true); //Minimum in step set disturbing
                         }
 
-                        if(!tempFourierAnalysis.isPocketDisturbing() && !tempFourierAnalysis.isNoStepNoise()) {
+                        if(queuingMode == 1 || queuingMode == 0 || queuingMode == 4 || queuingMode < 10) {
+                            if (!tempFourierAnalysis.isPocketDisturbing() && !tempFourierAnalysis.isNoStepNoise()) {
+                                //Set dataPoints
+                                rawDataBuffer[i].setStepIdentifier(1); //Start of step
+                                rawDataBuffer[tempMaxIndex].setStepIdentifier(2); //Maximum in step
+                                rawDataBuffer[tempMinIndex].setStepIdentifier(3); //Minimum in step
+                                stepCount++;
+
+                                //Add steps
+                                timeOfSteps.add(new Long(rawDataBuffer[i].getTimestamp()));
+
+                                i = i + timeDomainSteps;
+                            }
+                        }else{
                             //Set dataPoints
                             rawDataBuffer[i].setStepIdentifier(1); //Start of step
                             rawDataBuffer[tempMaxIndex].setStepIdentifier(2); //Maximum in step

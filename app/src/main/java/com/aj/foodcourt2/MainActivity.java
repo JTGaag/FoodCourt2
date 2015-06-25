@@ -14,7 +14,7 @@ import java.io.File;
 
 public class MainActivity extends ActionBarActivity {
 
-    Button buttonAcelerometer, buttonGraphs, buttonDeleteFile, buttonGraphsAlexander, buttonGraphsJoost, buttonWifiScanActivity, buttonBluetoothScanActivity, buttonMapActivity, buttonCombinedActivity, buttonMagneticJoostActivity;
+    Button buttonAcelerometer, buttonGraphs, buttonDeleteFile, buttonGraphsAlexander, buttonGraphsJoost, buttonWifiScanActivity, buttonBluetoothScanActivity, buttonMapActivity, buttonCombinedActivity, buttonMagneticJoostActivity, buttonQueuingActivity;
     Context context = this;
 
     @Override
@@ -32,6 +32,7 @@ public class MainActivity extends ActionBarActivity {
         buttonMapActivity = (Button) findViewById(R.id.button_map_activity);
         buttonCombinedActivity = (Button) findViewById(R.id.button_combined_activity);
         buttonMagneticJoostActivity = (Button) findViewById(R.id.button_magnetic_joost_activity);
+        buttonQueuingActivity = (Button) findViewById(R.id.button_queuing_activity);
 
 
         buttonAcelerometer.setOnClickListener(new View.OnClickListener() {
@@ -117,6 +118,14 @@ public class MainActivity extends ActionBarActivity {
             }
         });
 
+        buttonQueuingActivity.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent eventActivity = new Intent(MainActivity.this, QueuingActivity.class);
+                startActivity(eventActivity);
+            }
+        });
+
 
     }
 
@@ -136,7 +145,8 @@ public class MainActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            return true;
+            Intent eventActivity = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(eventActivity);
         }
 
         return super.onOptionsItemSelected(item);

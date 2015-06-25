@@ -135,7 +135,7 @@ public class GraphJoostActivity extends ActionBarActivity implements SensorEvent
         proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
 
         //Initate dataHandler (Bandaries must be more equal or more than 150/points per segemnts)
-        queuingDataHandler = new QueuingDataHandler(this, 50, 3, 7, true);
+        queuingDataHandler = new QueuingDataHandler(this, 50, 3, 7, 1);
 
         LineGraphSeries<DataPoint> series = new LineGraphSeries<DataPoint>(new DataPoint[]{
                 new DataPoint(0, 1),

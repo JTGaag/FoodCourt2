@@ -32,8 +32,8 @@ public class FourierAnalysis {
     private boolean pocketDisturbing = false;
     private boolean noStepNoise = false;
         //Constants for checking
-    private final double POCKET_DISTURPTION_TRESHOLD = 40.0;
-    private final double NOISE_THRESHOLD = 100.0;
+    private final double POCKET_DISTURPTION_TRESHOLD = 40.0/3;
+    private final double NOISE_THRESHOLD = 100.0/3;
 
 
 

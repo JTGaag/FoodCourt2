@@ -2,7 +2,9 @@ package com.aj.foodcourt2;
 
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -78,10 +80,15 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     float[] mGeomagnetic;
     float azimut;
     float degrees;
-    private TextView tvAzimut, tvAzimutDegrees, tvSteps, tvWifi;
+    private TextView tvAzimut, tvAzimutDegrees, tvSteps, tvWifi, tvStepMode;
 
     //Constants
     final double NS2S = 1.0/1000000000.0;
+    private final static String PREF_NAME = "foodcourtPreferenceFile";
+    private final static String STEP_MODE_NAME = "prefStepMode";
+
+    //Settings
+    SharedPreferences settings;
 
     //map
     ArrayList<Rectangle> rectangleArrayList = new ArrayList<Rectangle>();
@@ -98,10 +105,11 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     //Stuff
     EditText etDirection, etDistance;
-    Button buttonMove, buttonMotionDetection, buttonBacktrack, buttonGetWifiData;
+    Button buttonMove, buttonMotionDetection, buttonBacktrack, buttonGetWifiData, buttonStepStart, buttonStepStop;
     Bitmap bg;
 
-    private final int ENLARGE_FACTOR = 100; //50 for EWI building
+    private final int ENLARGE_FACTOR = 50; //50 for EWI building 100 for RDW
+    private final double DIRECTION_SD = 20;
 
     boolean motionDetection = false;
     Context context = this;
@@ -114,6 +122,9 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     //QDH to be used to analyse acceleration data and output step information and quining information
     private QueuingDataHandler queuingDataHandler;
     private MotionDataHandler motionDataHandler;
+
+    boolean sumSteps = false;
+    int totalSteps = 0;
 
 
     //Paints
@@ -147,6 +158,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         tvAzimutDegrees = (TextView) findViewById(R.id.tv_azimut_degrees);
         tvSteps = (TextView) findViewById(R.id.tv_steps);
         tvWifi = (TextView) findViewById(R.id.tv_wifi_data);
+        tvStepMode = (TextView) findViewById(R.id.tv_step_mode);
 
         //Input objects
         etDirection = (EditText)findViewById(R.id.editText_direction_combined);
@@ -155,10 +167,17 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         buttonMotionDetection = (Button)findViewById(R.id.button_motion_detection);
         buttonBacktrack = (Button)findViewById(R.id.button_backtrack);
         buttonGetWifiData = (Button)findViewById(R.id.button_get_wifi_data);
+        buttonStepStart = (Button)findViewById(R.id.button_step_start);
+        buttonStepStop = (Button)findViewById(R.id.button_step_stop);
+
+
+        //Do stuff with settings
+        settings = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+
 
         //Make maps to be used for distribution and collision
-        //makeMaps();
-        makeMaps2();
+        makeMaps();
+        //makeMaps2();
 
         //Init bitmap
         bg = Bitmap.createBitmap(3700,1000, Bitmap.Config.ARGB_8888);
@@ -246,18 +265,34 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
             @Override
             public void onClick(View view) {
                 HashMap<String, String> postData = new HashMap<String, String>();
-                postData.put("building_id", "3");
+                postData.put("building_id", "1");
 
                 AsyncHttpPost asyncHttpPost = new AsyncHttpPost(CombinedActivity.this, postData);
                 asyncHttpPost.execute("https://trimbl-registration.herokuapp.com/wifi/showforbuilding");
             }
         });
 
-        /*
-        Initialize all data handlers
-         */
-        queuingDataHandler = new QueuingDataHandler(this, 50, 3, 7, false);
-        motionDataHandler = new MotionDataHandler(this);
+        buttonStepStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(!sumSteps){
+                    sumSteps = true;
+                    Toast.makeText(getApplicationContext(), "Start step counting", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        buttonStepStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sumSteps = false;
+                Toast.makeText(getApplicationContext(), "number of steps: "+totalSteps, Toast.LENGTH_LONG).show();
+                //Log.d(LOG_TAG, "STEPSTOP clicked");
+                totalSteps = 0;
+            }
+        });
+
+
     }
 
     @Override
@@ -272,6 +307,22 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
         //
         registerReceiver(wifiReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+
+        tvStepMode.setText("Step Mode: " + settings.getInt(STEP_MODE_NAME, 1));
+        /*
+        Initialize all data handlers (in onResume to change settings
+         */
+        /*
+        mode:
+        1: normal queuing
+        2: default localization
+        3: Joost step counting
+        4: Jork step counting
+        5: Willem
+        6: Alexander
+         */
+        queuingDataHandler = new QueuingDataHandler(this, 50, 1, 2, settings.getInt(STEP_MODE_NAME, 2));
+        motionDataHandler = new MotionDataHandler(this);
     }
 
     @Override
@@ -299,7 +350,8 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            return true;
+            Intent eventActivity = new Intent(CombinedActivity.this, SettingsActivity.class);
+            startActivity(eventActivity);
         }
 
         return super.onOptionsItemSelected(item);
@@ -383,6 +435,9 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     public void onStepCount(ArrayList<Long> timeOfSteps, long endTime) {
         //Log.d("Steps", "Number of steps: " + timeOfSteps.size());
         tvSteps.setText("number of steps: " + timeOfSteps.size());
+        if(sumSteps){
+            totalSteps += timeOfSteps.size();
+        }
         if(motionDetection) {
             motionDataHandler.addSteps(timeOfSteps, endTime);
         }
@@ -400,7 +455,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     public void onMotion(double direction, double distance, long timestamp) {
         //Log.d(LOG_TAG, "Direction: " + direction + " ; Distance: " + distance);
         //move particles
-        particleManager.moveAndDistribute(timestamp, direction, 25, distance, distance/8);
+        particleManager.moveAndDistribute(timestamp, direction, DIRECTION_SD, distance, distance/10);
         redrawMap();
     }
 
@@ -450,6 +505,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
             //Log.d("Json Object from server", "JSON: " + json.toString());
             try {
                 int response_code = json.getInt("response_code");
+                Toast.makeText(getApplicationContext(), "Server response, code: "+response_code,Toast.LENGTH_SHORT).show();
                 switch(response_code){
                     case 1:
 
@@ -542,8 +598,8 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
         //send to Server
         HashMap<String, String> postData = new HashMap<String, String>();
-        postData.put("building_id", "3");
-        postData.put("phone_id", "Joost_phone");
+        postData.put("building_id", "1");
+        postData.put("phone_id", "Alexander_phone");
         //Add wifi array
         postData.put("wifi_data_array", jsonWifiArray.toString());
 
