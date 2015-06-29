@@ -21,6 +21,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -135,6 +136,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
     Paint paintDotDestroy = new Paint();
     Paint paintCollision = new Paint();
     Paint paintMean = new Paint();
+    Paint paintBacktrack = new Paint();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -291,6 +293,8 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                 totalSteps = 0;
             }
         });
+
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
 
     }
@@ -713,7 +717,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
             beginCoordinates[1] = trackedMeanData.get(i).getyPosition();
             endCoordinates[0] = trackedMeanData.get(i+1).getxPosition();
             endCoordinates[1] = trackedMeanData.get(i+1).getyPosition();
-            canvas.drawLine((float) beginCoordinates[0] * ENLARGE_FACTOR, (float) beginCoordinates[1] * ENLARGE_FACTOR, (float) endCoordinates[0] * ENLARGE_FACTOR, (float) endCoordinates[1] * ENLARGE_FACTOR, paint);
+            canvas.drawLine((float) beginCoordinates[0] * ENLARGE_FACTOR, (float) beginCoordinates[1] * ENLARGE_FACTOR, (float) endCoordinates[0] * ENLARGE_FACTOR, (float) endCoordinates[1] * ENLARGE_FACTOR, paintBacktrack);
             Log.d("trackedCoordinates", "xAxis: " + beginCoordinates[0] + " yAxis: " + beginCoordinates[1] + "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
             //Log.d("trackedEndCoordinates", "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
         }
@@ -815,18 +819,20 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     protected void setPaints(){
         //Set Paints
-        paint.setColor(Color.rgb(0, 0, 0));
-        paint.setStyle(Paint.Style.STROKE);
+        //paint.setColor(Color.rgb(0, 0, 0));
+        paint.setColor(getResources().getColor(R.color.foodcourt_cyan_300));
+        paint.setStyle(Paint.Style.FILL);
         paint.setStrokeWidth(5.0f);
 
-        paintCell.setColor(Color.argb(128, 255, 0, 0));
+        paintCell.setColor(getResources().getColor(R.color.foodcourt_cyan_900));
         paintCell.setStyle(Paint.Style.FILL);
 
         paintCellStroke.setColor(Color.rgb(128, 0, 0));
         paintCellStroke.setStyle(Paint.Style.STROKE);
-        paintCellStroke.setStrokeWidth(5.0f);
+        paintCellStroke.setStrokeWidth(0.0f);
 
-        paintDot.setColor(Color.rgb(51, 128, 51));
+        //paintDot.setColor(Color.rgb(51, 128, 51));
+        paintDot.setColor(getResources().getColor(R.color.foodcourt_pink_accent_900));
         paintDot.setStyle(Paint.Style.FILL);
         paintDot.setStrokeWidth(5.0f);
 
@@ -834,13 +840,18 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         paintDotDestroy.setStyle(Paint.Style.FILL);
         paintDotDestroy.setStrokeWidth(2.0f);
 
-        paintCollision.setColor(Color.rgb(255,51,255));
+        //paintCollision.setColor(Color.rgb(255,51,255));
+        paintCollision.setColor(getResources().getColor(R.color.foodcourt_yellow_accent_500));
         paintCollision.setStyle(Paint.Style.FILL);
-        paintCollision.setStrokeWidth(5.0f);
+        paintCollision.setStrokeWidth(10.0f);
 
-        paintMean.setColor(Color.rgb(255, 0, 0));
+        paintMean.setColor(getResources().getColor(R.color.foodcourt_pink_accent_500));
         paintMean.setStyle(Paint.Style.FILL);
         paintMean.setStrokeWidth(10.0f);
+
+        paintBacktrack.setColor(getResources().getColor(R.color.foodcourt_pink_accent_500));
+        paintBacktrack.setStyle(Paint.Style.FILL);
+        paintBacktrack.setStrokeWidth(6.0f);
     }
 
     protected void makeMaps2(){

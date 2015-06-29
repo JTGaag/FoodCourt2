@@ -2,5 +2,13 @@
 <resources>
     <color name="background_yellow">#DDDD00</color>
     <color name="black">#000000</color>
+    <color name="foodcourt_cyan_900">#016064</color>
+    <color name="foodcourt_cyan_700">#0297a7</color>
+    <color name="foodcourt_cyan_500">#09bcd3</color>
+    <color name="foodcourt_cyan_300">#54d8e2</color>
+    <color name="foodcourt_yellow_accent_500">#feea39</color>
+    <color name="foodcourt_pink_accent_900">#871a50</color>
+    <color name="foodcourt_pink_accent_500">#e71f63</color>
+
 
 </resources>

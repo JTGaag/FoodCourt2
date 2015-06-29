@@ -3,7 +3,7 @@ package com.aj.foodcourt2;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -12,7 +12,7 @@ import android.widget.Button;
 import java.io.File;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends AppCompatActivity {
 
     Button buttonAcelerometer, buttonGraphs, buttonDeleteFile, buttonGraphsAlexander, buttonGraphsJoost, buttonWifiScanActivity, buttonBluetoothScanActivity, buttonMapActivity, buttonCombinedActivity, buttonMagneticJoostActivity, buttonQueuingActivity;
     Context context = this;

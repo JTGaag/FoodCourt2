@@ -2,7 +2,17 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
+
+        <!--
+        <item name="actionBarStyle">@style/MyActionBarStyle</item>
+        -->
+
+        <item name="colorPrimary">@color/foodcourt_cyan_500</item>
+        <item name="colorPrimaryDark">@color/foodcourt_cyan_700</item>
+    </style>
+
+    <style name="MyActionBarStyle" parent="ThemeOverlay.AppCompat.ActionBar">
+        <item name="colorPrimary">@color/foodcourt_cyan_500</item>
     </style>
 
 </resources>
