@@ -7,54 +7,76 @@
     android:orientation="vertical"
     tools:context="com.aj.foodcourt2.SettingsActivity">
 
-    <TextView android:text="Step detection mode" 
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" 
-        android:textSize="16sp"
-        android:textColor="@color/black"/>
-
-    <RadioGroup
-        android:layout_width="wrap_content"
+    <android.support.v7.widget.CardView
+        xmlns:card_view="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/card_view"
+        android:layout_gravity="center"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/rg_mode_selection"
-        android:checkedButton="@+id/rb_mode_queuing">
+        card_view:cardCornerRadius="4dp"
+        card_view:cardElevation="5dp"
+        card_view:cardUseCompatPadding="true">
 
-        <RadioButton
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/rb_mode_queuing"
-            android:text="Default queuing mode"/>
+            android:orientation="vertical"
+            android:paddingTop="@dimen/activity_horizontal_margin_small"
+            android:paddingBottom="@dimen/activity_horizontal_margin_small"
+            android:paddingLeft="@dimen/activity_horizontal_margin_small"
+            android:paddingRight="@dimen/activity_horizontal_margin_small">
 
-        <RadioButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/rb_mode_localization"
-            android:text="Default localization mode"/>
+            <TextView android:text="Step detection mode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textColor="@color/black"/>
 
-        <RadioButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/rb_mode_joost"
-            android:text="Joost optimized mode"/>
+            <RadioGroup
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/rg_mode_selection"
+                android:checkedButton="@+id/rb_mode_queuing">
 
-        <RadioButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/rb_mode_jork"
-            android:text="Jork optimized mode"/>
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/rb_mode_queuing"
+                    android:text="Default queuing mode"/>
 
-        <RadioButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/rb_mode_willem"
-            android:text="Willem optimized mode"/>
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/rb_mode_localization"
+                    android:text="Default localization mode"/>
 
-        <RadioButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/rb_mode_alexander"
-            android:text="Alexander optimized mode"/>
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/rb_mode_joost"
+                    android:text="Joost optimized mode"/>
 
-    </RadioGroup>
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/rb_mode_jork"
+                    android:text="Jork optimized mode"/>
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/rb_mode_willem"
+                    android:text="Willem optimized mode"/>
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/rb_mode_alexander"
+                    android:text="Alexander optimized mode"/>
+
+            </RadioGroup>
+
+        </LinearLayout>
+    </android.support.v7.widget.CardView>
 
 </LinearLayout>

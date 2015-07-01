@@ -32,13 +32,25 @@ public class FourierAnalysis {
     private boolean pocketDisturbing = false;
     private boolean noStepNoise = false;
         //Constants for checking
-    private final double POCKET_DISTURPTION_TRESHOLD = 40.0/3;
-    private final double NOISE_THRESHOLD = 100.0/3;
+    private double pocketDisturptionTreshold = 40.0/3;
+    private double noiseThreshold = 100.0/3;
+    private final double POCKET_DISTURPTION_TRESHOLD_SHORT = 40.0/3;
+    private final double NOISE_THRESHOLD_SHORT = 100.0/3;
+    private final double POCKET_DISTURPTION_TRESHOLD_LONG = 40.0;
+    private final double NOISE_THRESHOLD_LONG = 100.0;
 
 
 
-    public FourierAnalysis(QueuingSensorData[] timeData) {
+    public FourierAnalysis(QueuingSensorData[] timeData, boolean longFourier) {
         this.timeData = timeData;
+
+        if(longFourier){
+            pocketDisturptionTreshold = POCKET_DISTURPTION_TRESHOLD_LONG;
+            noiseThreshold = NOISE_THRESHOLD_LONG;
+        }else{
+            pocketDisturptionTreshold = POCKET_DISTURPTION_TRESHOLD_SHORT;
+            noiseThreshold = NOISE_THRESHOLD_SHORT;
+        }
 
         numberOfPoints = timeData.length;
         fft = new double[numberOfPoints*2]; //From: https://gist.github.com/jongukim/4037243
@@ -142,11 +154,11 @@ public class FourierAnalysis {
 
     private void calculateNoise(){
         //TODO: do the noise boolean checks
-        if(checkPointsAvg[0]>POCKET_DISTURPTION_TRESHOLD){//Low frequencies give high result (meaning in and out of pocket)
+        if(checkPointsAvg[0]> pocketDisturptionTreshold){//Low frequencies give high result (meaning in and out of pocket)
             pocketDisturbing = true;
         }
 
-        if(checkPointsAvg[2]>NOISE_THRESHOLD || checkPointsAvg[3]>NOISE_THRESHOLD){ //Medium frequencies noise (meaning that no step is taken, but a lot of acceleration is measured e.g. playing a game)
+        if(checkPointsAvg[2]> noiseThreshold || checkPointsAvg[3]> noiseThreshold){ //Medium frequencies noise (meaning that no step is taken, but a lot of acceleration is measured e.g. playing a game)
             noStepNoise = true;
         }
 

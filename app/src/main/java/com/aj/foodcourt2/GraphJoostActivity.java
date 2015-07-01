@@ -2,6 +2,8 @@ package com.aj.foodcourt2;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -96,6 +98,10 @@ public class GraphJoostActivity extends ActionBarActivity implements SensorEvent
 
     final Context context = this;
 
+    private final static String PREF_NAME = "foodcourtPreferenceFile";
+    private final static String STEP_MODE_NAME = "prefStepMode";
+
+    SharedPreferences settings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,8 +140,10 @@ public class GraphJoostActivity extends ActionBarActivity implements SensorEvent
         lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
 
-        //Initate dataHandler (Bandaries must be more equal or more than 150/points per segemnts)
-        queuingDataHandler = new QueuingDataHandler(this, 50, 3, 7, 1);
+        //Do stuff with settings
+        settings = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+
+
 
         LineGraphSeries<DataPoint> series = new LineGraphSeries<DataPoint>(new DataPoint[]{
                 new DataPoint(0, 1),
@@ -198,6 +206,9 @@ public class GraphJoostActivity extends ActionBarActivity implements SensorEvent
         sensorManager.registerListener(this, gravitySensor, 10000);
         sensorManager.registerListener(this, lightSensor, 10000);
         sensorManager.registerListener(this, proximitySensor, 10000);
+
+        //Initate dataHandler (Boundaries must be more equal or more than 150/points per segemnts)
+        queuingDataHandler = new QueuingDataHandler(this, 50, 3, 7, settings.getInt(STEP_MODE_NAME, 2), true);
     }
 
     @Override
@@ -222,7 +233,8 @@ public class GraphJoostActivity extends ActionBarActivity implements SensorEvent
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            return true;
+            Intent eventActivity = new Intent(GraphJoostActivity.this, SettingsActivity.class);
+            startActivity(eventActivity);
         }
 
         return super.onOptionsItemSelected(item);

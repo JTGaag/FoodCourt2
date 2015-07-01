@@ -72,6 +72,10 @@
             android:name=".QueuingActivity"
             android:label="@string/title_activity_queuing" >
         </activity>
+        <activity
+            android:name=".ActivityMonitoringActivity"
+            android:label="@string/title_activity_activity_monitoring" >
+        </activity>
     </application>
 
 </manifest>

@@ -70,7 +70,10 @@ public class QueuingDataHandler {
     private final double ACCELERATION_DIFFERENCE_THRESHOLD_MAX_LOCALIZATION = 20.0;
 
     //For fourier analyisi
-    private final int FOURIER_DOMAIN_RADIUS = 50; //Normal 150
+    private int fourierDomainRadius = 50; //Normal 150
+    private final int FOURIER_DOMAIN_RADIUS_SHORT = 50; //Normal 150
+    private final int FOURIER_DOMAIN_RADIUS_LONG = 150; //Normal 150
+    private boolean longFourier;
 
 
     //Constructor for Handler also run initiation method
@@ -82,12 +85,19 @@ public class QueuingDataHandler {
      * @param segmentsPerBoundary
      * @param segmentsPerBody
      */
-    public QueuingDataHandler(QueuingListener queuingListener, int pointsPerSegment, int segmentsPerBoundary, int segmentsPerBody, int queueingMode) {
+    public QueuingDataHandler(QueuingListener queuingListener, int pointsPerSegment, int segmentsPerBoundary, int segmentsPerBody, int queueingMode, boolean longFourier) {
         this.queuingListener = queuingListener;
         this.pointsPerSegment = pointsPerSegment;
         this.segmentsPerBoundary = segmentsPerBoundary;
         this.segmentsPerBody = segmentsPerBody;
         this.queuingMode = queueingMode;
+        this.longFourier = longFourier;
+
+        if(longFourier){
+            fourierDomainRadius = FOURIER_DOMAIN_RADIUS_LONG;
+        }else{
+            fourierDomainRadius = FOURIER_DOMAIN_RADIUS_SHORT;
+        }
 
         switch(queueingMode){
             case 1: //Queuing first
@@ -302,10 +312,10 @@ public class QueuingDataHandler {
 
                         //TODO: Do something here with fourier transform to see if possible step is not a distrubance such as random movement etc.
 
-                        //Log.d("Array", "min index: " + (i-FOURIER_DOMAIN_RADIUS));
-                        //Log.d("Array", "max index: " + (i + FOURIER_DOMAIN_RADIUS));
-                        QueuingSensorData tempFourierData[] = Arrays.copyOfRange(rawDataBuffer, i-FOURIER_DOMAIN_RADIUS, i + FOURIER_DOMAIN_RADIUS);
-                        FourierAnalysis tempFourierAnalysis = new FourierAnalysis(tempFourierData);
+                        //Log.d("Array", "min index: " + (i-fourierDomainRadius));
+                        //Log.d("Array", "max index: " + (i + fourierDomainRadius));
+                        QueuingSensorData tempFourierData[] = Arrays.copyOfRange(rawDataBuffer, i- fourierDomainRadius, i + fourierDomainRadius);
+                        FourierAnalysis tempFourierAnalysis = new FourierAnalysis(tempFourierData, longFourier);
 
                         //Pocket disturption
                         if(tempFourierAnalysis.isPocketDisturbing()){

@@ -42,6 +42,13 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="Activity monitoring"
+                android:id="@+id/button_monitoring"
+                android:background="@drawable/custom_btn"
+                android:textColor="@color/foodcourt_cyan_700" />
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Graphs"
                 android:id="@+id/button_graphs"
                 android:background="@drawable/custom_btn"
