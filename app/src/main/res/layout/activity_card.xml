@@ -6,7 +6,8 @@
     android:paddingTop="@dimen/activity_zerro_margin"
     android:paddingBottom="@dimen/activity_zerro_margin"
     android:paddingLeft="@dimen/activity_zerro_margin"
-    android:paddingRight="@dimen/activity_zerro_margin">
+    android:paddingRight="@dimen/activity_zerro_margin"
+    android:background="?android:attr/selectableItemBackground">
 
     <android.support.v7.widget.CardView
         xmlns:card_view="http://schemas.android.com/apk/res-auto"

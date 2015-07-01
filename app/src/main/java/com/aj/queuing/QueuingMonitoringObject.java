@@ -85,31 +85,13 @@ public class QueuingMonitoringObject {
         }
         //DONE: if at end queueing is stopped
         queueList.add(new Queue(tempBeginIndex, blockArray.length-1));
-
     }
 
-    class Queue{
-        int beginIndex, endIndex;
-        boolean validQueue = true;
+    public MacroBlockObject[] getBlockArray() {
+        return blockArray;
+    }
 
-        public Queue(int beginIndex, int endIndex) {
-            this.beginIndex = beginIndex;
-            this.endIndex = endIndex;
-            if(endIndex<=beginIndex){
-                validQueue = false;
-            }
-        }
-
-        public int getBeginIndex() {
-            return beginIndex;
-        }
-
-        public int getEndIndex() {
-            return endIndex;
-        }
-
-        public boolean isValidQueue() {
-            return validQueue;
-        }
+    public ArrayList<Queue> getQueueList() {
+        return queueList;
     }
 }

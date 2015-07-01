@@ -15,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.aj.queuing.MacroBlockObject;
@@ -22,13 +23,15 @@ import com.aj.queuing.QueuingDataHandler;
 import com.aj.queuing.QueuingDisplayObject;
 import com.aj.queuing.QueuingListener;
 import com.aj.queuing.QueuingSensorData;
+import com.aj.recyclerview.RVAdapter;
+import com.aj.recyclerview.RecyclerViewClickListener;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class ActivityMonitoringActivity extends AppCompatActivity implements SensorEventListener, QueuingListener{
+public class ActivityMonitoringActivity extends AppCompatActivity implements SensorEventListener, QueuingListener, RecyclerViewClickListener{
 
     /*
     UNDER THE HOOD
@@ -53,6 +56,7 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
     int stopActivityWait = 0;
     boolean started = false;
     boolean stopped = false;
+    boolean recording = false;
 
     private final static String PREF_NAME = "foodcourtPreferenceFile";
     private final static String STEP_MODE_NAME = "prefStepMode";
@@ -76,6 +80,7 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
 
     Button buttonStartMonitoring, buttonStopMonitoring;
     TextView tvStepMode, tvSteps, tvState;
+    ImageView ivPlay, ivStop, ivRecord;
 
     RecyclerView recyclerView;
     LinearLayoutManager linearLayoutManager;
@@ -118,7 +123,7 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
 //        queuingDisplayObjects.add(new QueuingDisplayObject("Title 2", "Start: 12:08.05  End: 12:10.48", "Lorem ipsum dolor sit amet, blandit aliquam ante vitae, proin id mi aenean erat egestas felis. Condimentum erat sem turpis ullamcorper cursus. Penatibus eu congue at ullamcorper feugiat, tempus nec turpis quis, ut tincidunt lorem, ac ut id nostra. Massa tortor, et id tincidunt morbi, mattis platea elit aliquam pellentesque."));
 //        queuingDisplayObjects.add(new QueuingDisplayObject("Title 3", "Start: 12:23.05  End: 12:30.48", "Lorem ipsum dolor sit amet, blandit aliquam ante vitae, proin id mi aenean erat egestas felis. Condimentum erat sem turpis ullamcorper cursus. Penatibus eu congue at ullamcorper feugiat, tempus nec turpis quis, ut tincidunt lorem, ac ut id nostra. Massa tortor, et id tincidunt morbi, mattis platea elit aliquam pellentesque."));
 
-        adapter = new RVAdapter(queuingDisplayObjects);
+        adapter = new RVAdapter(queuingDisplayObjects, this);
         recyclerView.setAdapter(adapter);
 
         tvStepMode = (TextView)findViewById(R.id.tv_step_mode);
@@ -126,6 +131,10 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
         tvState = (TextView)findViewById(R.id.tv_state);
 
         tvState.setText("State: " + currentState);
+
+        ivPlay = (ImageView)findViewById(R.id.iv_play);
+        ivStop = (ImageView)findViewById(R.id.iv_stop);
+        ivRecord = (ImageView)findViewById(R.id.iv_record);
 
         buttonStartMonitoring = (Button)findViewById(R.id.button_start_monitoring);
         buttonStopMonitoring = (Button)findViewById(R.id.button_stop_monitoring);
@@ -135,6 +144,7 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
             public void onClick(View v) {
                 if(!started) {
                     started = true;
+                    changeImages();
                     startActivityTime = System.currentTimeMillis();
                     Log.d("Activity logging", "Activity startTime: " + startActivityTime);
                     blockToAnalyse.clear();
@@ -152,6 +162,7 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
             public void onClick(View v) {
                 if(!stopped) {
                     stopped = true;
+                    changeImages();
                     stopActivityTime = System.currentTimeMillis();
                     Date now = new Date(System.currentTimeMillis());
                     bufferQueuingObject.setTime(bufferQueuingObject.getTime() + " | EndTime: " + sdf.format(now));
@@ -269,6 +280,8 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
             if(started){
                 startActivityWait++;
                 if(startActivityWait>2) {
+                    recording = true;
+                    changeImages();
                     blockToAnalyse.add(blockBuffer.get(2));
                     bufferQueuingObject.setInfo(bufferQueuingObject.getInfo() + sdf.format(blockStartTime) + " - " + sdf.format(blockEndTime) + " : " + blockBuffer.get(2).getBlockMacroState() + "\n");
                     adapter.notifyDataSetChanged();
@@ -281,6 +294,8 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
                 if(stopActivityWait>2) {
                     started = false;
                     stopped = false;
+                    recording = false;
+                    changeImages();
                     stopActivityWait = 0;
                     startActivityWait = 0;
                     Log.d("Activity logging", "Stopped logging");
@@ -340,5 +355,41 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
+    }
+
+    /**
+     * Called when the view is clicked.
+     *
+     * @param v           view that is clicked
+     * @param position    of the clicked item
+     * @param isLongClick true if long click, false otherwise
+     */
+    @Override
+    public void onClick(View v, int position, boolean isLongClick) {
+        if(isLongClick){
+            Log.d("RecyclerView Click", "LongPress, pos: " + position);
+        }else{
+            Log.d("RecyclerView Click", "Press, pos: " + position);
+        }
+    }
+
+    public void changeImages(){
+        if(started){
+            ivPlay.setImageResource(R.drawable.ic_play_arrow_red_24dp);
+        }else{
+            ivPlay.setImageResource(R.drawable.ic_play_arrow_white_24dp);
+        }
+
+        if(stopped){
+            ivStop.setImageResource(R.drawable.ic_stop_red_24dp);
+        }else{
+            ivStop.setImageResource(R.drawable.ic_stop_white_24dp);
+        }
+
+        if(recording){
+            ivRecord.setImageResource(R.drawable.ic_record_red_24dp);
+        }else{
+            ivRecord.setImageResource(R.drawable.ic_record_white_24dp);
+        }
     }
 }

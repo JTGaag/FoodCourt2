@@ -1,12 +1,11 @@
-package com.aj.foodcourt2;
+package com.aj.recyclerview;
 
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
+import com.aj.foodcourt2.R;
 import com.aj.queuing.QueuingDisplayObject;
 
 import java.util.List;
@@ -14,33 +13,21 @@ import java.util.List;
 /**
  * Created by Joost on 01/07/2015.
  */
-public class RVAdapter extends RecyclerView.Adapter<RVAdapter.ActivityViewHolder>{
-
-    public static class ActivityViewHolder extends RecyclerView.ViewHolder{
-
-        CardView cv;
-        TextView tvTitle, tvTimeInfo, tvActivityInfo;
-
-        public ActivityViewHolder(View itemView) {
-            super(itemView);
-            cv = (CardView)itemView.findViewById(R.id.card_view);
-            tvTitle = (TextView)itemView.findViewById(R.id.card_title);
-            tvTimeInfo = (TextView)itemView.findViewById(R.id.card_time_info);
-            tvActivityInfo = (TextView)itemView.findViewById(R.id.card_activity_info);
-        }
-    }
+public class RVAdapter extends RecyclerView.Adapter<ActivityViewHolder>{
 
     List<QueuingDisplayObject> queuingDisplayObjects;
+    RecyclerViewClickListener recyclerViewClickListener;
 
-    RVAdapter(List<QueuingDisplayObject> queuingDisplayObjects){
+    public RVAdapter(List<QueuingDisplayObject> queuingDisplayObjects, RecyclerViewClickListener recyclerViewClickListener){
         this.queuingDisplayObjects = queuingDisplayObjects;
+        this.recyclerViewClickListener = recyclerViewClickListener;
     }
 
 
     @Override
     public ActivityViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.activity_card, parent, false);
-        ActivityViewHolder avh = new ActivityViewHolder(v);
+        ActivityViewHolder avh = new ActivityViewHolder(v, recyclerViewClickListener);
         return avh;
     }
 
