@@ -140,6 +140,11 @@
                         android:layout_height="wrap_content"
                         android:text="Steps"
                         android:id="@+id/tv_steps_localization"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="CurrentLocation"
+                        android:id="@+id/tv_current_location"/>
 
                 </LinearLayout>
 

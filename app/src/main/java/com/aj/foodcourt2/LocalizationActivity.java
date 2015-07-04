@@ -116,7 +116,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     Button buttonMotionDetection, buttonReset, buttonBacktrack, buttonLocalize;
     ImageView ivPlay, ivStop, ivRecord;
     TextView tvAzimutDegrees, tvSteps;
-    TextView currentLocation;
+    TextView tvCurrentLocation;
 
 
     //Paints
@@ -176,6 +176,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
         tvAzimutDegrees = (TextView)findViewById(R.id.tv_azimut_deg);
         tvSteps = (TextView)findViewById(R.id.tv_steps_localization);
+        tvCurrentLocation = (TextView)findViewById(R.id.tv_current_location);
 
         //Button Shine
         buttonBacktrack = (Button)findViewById(R.id.button_backtrack);
@@ -192,7 +193,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         buttonLocalize.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                getNearestLocation();
             }
         });
         buttonMotionDetection.setOnClickListener(new View.OnClickListener() {
@@ -584,7 +585,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         }
 
         particleManager.calculateMean();
-        canvas.drawPoint((float) (particleManager.getMeanX() * enlargeFactor +X_OFFSET), (float) (particleManager.getMeanY() * enlargeFactor)+Y_OFFSET, paintMean);
+        canvas.drawPoint((float) (particleManager.getMeanX() * enlargeFactor + X_OFFSET), (float) (particleManager.getMeanY() * enlargeFactor) + Y_OFFSET, paintMean);
         //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
 
 
@@ -809,6 +810,8 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         particleArray = particleManager.getParticleArray();
         redrawMap();
     }
+
+
     public void getNearestLocation(){
 
        // Canvas canvas = new Canvas(bg);
@@ -818,7 +821,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
             Rectangle rec = cellArrayList.get(r);
            // canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCell);
           //  canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCellStroke);
-            currentLocation.setText("coordinates: " + (particleManager.getMeanX() + particleManager.getMeanY()) + "nearest cell: " + rec.getRectangleName() );
+            tvCurrentLocation.setText("x: " + particleManager.getMeanX() + " y: " + particleManager.getMeanY() + "\nnearest cell: " + rec.getRectangleName());
 
         }
 

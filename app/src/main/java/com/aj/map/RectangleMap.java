@@ -89,12 +89,12 @@ public class RectangleMap {
 
     }
     public int nearestRectangle(double meanX, double meanY){
-        double smallestDistance = sqrt((meanX - rectangles.get(0).getCenterX() * meanX - rectangles.get(0).getCenterX() + (meanY - rectangles.get(0).getCenterY() * meanY - rectangles.get(0).getCenterY())));
+        double smallestDistance = sqrt((((meanX - rectangles.get(0).getCenterX()) * (meanX - rectangles.get(0).getCenterX())) + (((meanY - rectangles.get(0).getCenterY()) * (meanY - rectangles.get(0).getCenterY())))));
         int index = 0;
         for(Rectangle rec : rectangles){
-            if (sqrt(meanX-rec.getCenterX()*meanX-rec.getCenterX() + meanY-rec.getCenterY()*meanY-rec.getCenterY())<smallestDistance){
+            if (sqrt(((meanX-rec.getCenterX())*(meanX-rec.getCenterX())) + ((meanY-rec.getCenterY())*(meanY-rec.getCenterY())))<smallestDistance){
                 index = rectangles.indexOf(rec);
-                smallestDistance = sqrt(meanX-rec.getCenterX()*meanX-rec.getCenterX() + meanY-rec.getCenterY()*meanY-rec.getCenterY());
+                smallestDistance = sqrt(((meanX-rec.getCenterX())*(meanX-rec.getCenterX())) + ((meanY-rec.getCenterY())*(meanY-rec.getCenterY())));
              }
         }
 
