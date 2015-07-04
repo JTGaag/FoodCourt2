@@ -1,5 +1,6 @@
 package com.aj.foodcourt2;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.hardware.Sensor;
@@ -10,6 +11,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,9 +21,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.aj.queuing.MacroBlockObject;
+import com.aj.queuing.Queue;
 import com.aj.queuing.QueuingDataHandler;
+import com.aj.queuing.QueuingDataObject;
 import com.aj.queuing.QueuingDisplayObject;
 import com.aj.queuing.QueuingListener;
+import com.aj.queuing.QueuingMonitoringObject;
 import com.aj.queuing.QueuingSensorData;
 import com.aj.recyclerview.RVAdapter;
 import com.aj.recyclerview.RecyclerViewClickListener;
@@ -48,6 +53,7 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
 
     private ArrayList<MacroBlockObject> blockBuffer = new ArrayList<>();
     private ArrayList<MacroBlockObject> blockToAnalyse = new ArrayList<>();
+    private ArrayList<QueuingDataObject> queuingDataObjects = new ArrayList<>();
 
     QueuingDisplayObject bufferQueuingObject;
 
@@ -153,6 +159,7 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
                     bufferQueuingObject = adapter.getLastObject();
                     linearLayoutManager.scrollToPosition(adapter.getItemCount()-1);
                     adapter.notifyDataSetChanged();
+                    queuingDataObjects.add(new QueuingDataObject(adapter.getItemCount()-1, bufferQueuingObject));
                 }
             }
         });
@@ -165,7 +172,7 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
                     changeImages();
                     stopActivityTime = System.currentTimeMillis();
                     Date now = new Date(System.currentTimeMillis());
-                    bufferQueuingObject.setTime(bufferQueuingObject.getTime() + " | EndTime: " + sdf.format(now));
+                    bufferQueuingObject.setTime(bufferQueuingObject.getTime() + "\nEndTime: " + sdf.format(now));
                     adapter.notifyDataSetChanged();
                 }
             }
@@ -301,8 +308,16 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
                     Log.d("Activity logging", "Stopped logging");
                     bufferQueuingObject.setTitle("Activity #" + adapter.getItemCount());
                     adapter.notifyDataSetChanged();
-                    //QueuingMonitoringObject queuingMonitoringObject = new QueuingMonitoringObject(blockToAnalyse.toArray(new MacroBlockObject[blockToAnalyse.size()]));
-
+                    QueuingMonitoringObject queuingMonitoringObject = new QueuingMonitoringObject(blockToAnalyse.toArray(new MacroBlockObject[blockToAnalyse.size()]));
+                    //TODO: Change states in card view to final states from monitoring object
+                    bufferQueuingObject.setInfo("Log: \n");
+                    for(MacroBlockObject block : queuingMonitoringObject.getBlockArray()){
+                        Date startTime = new Date(firstTimeMillis + (block.getStartTimestamp()-firstTimeNano)/1000000);
+                        Date endTime = new Date(firstTimeMillis + (block.getEndTimestamp()-firstTimeNano)/1000000);
+                        bufferQueuingObject.setInfo(bufferQueuingObject.getInfo() + sdf.format(startTime) + " - " + sdf.format(endTime) + " : " + block.getBlockMacroState() + "\n");
+                    }
+                    queuingDataObjects.get(queuingDataObjects.size()-1).setQueuingMonitoringObject(queuingMonitoringObject);
+                    queuingDataObjects.get(queuingDataObjects.size()-1).setFinished(true);
                     //showMonitoringDialog();
                 }
             }
@@ -367,7 +382,60 @@ public class ActivityMonitoringActivity extends AppCompatActivity implements Sen
     @Override
     public void onClick(View v, int position, boolean isLongClick) {
         if(isLongClick){
-            Log.d("RecyclerView Click", "LongPress, pos: " + position);
+            for(QueuingDataObject obj: queuingDataObjects){
+                if(obj.getPosition() == position){
+
+                    final Dialog dialog = new Dialog(this);
+                    dialog.setContentView(R.layout.monitoring_dialog);
+                    dialog.setTitle(obj.getQueuingDisplayObject().getTitle());
+                    TextView dialogTime = (TextView)dialog.findViewById(R.id.dialog_time_info);
+                    TextView dialogQueueNumber = (TextView)dialog.findViewById(R.id.dialog_queue_number);
+                    TextView dialogQueueInfo = (TextView)dialog.findViewById(R.id.dialog_queue_info);
+
+                    dialogTime.setText(obj.getQueuingDisplayObject().getTime());
+                    //Log.d("RecyclerView Click", "LongPress, pos: " + position);
+                    //Log.d("RecyclerView Click", "LongPress, finished: " + obj.isFinished());
+                    if(obj.isFinished() && obj.getQueuingMonitoringObject() != null) {
+                        //Number of Queues
+                        dialogQueueNumber.setText("Number of Queues: " + obj.getQueuingMonitoringObject().getQueueList().size());
+
+                        //Display info of Queues
+                        StringBuilder stringBuilder = new StringBuilder();
+                        String decimalFormat = "%.1f";
+                        int nmb = 0;
+                        for(Queue queue: obj.getQueuingMonitoringObject().getQueueList()){
+                            nmb++;
+                            Date startTime = new Date(firstTimeMillis + (queue.getBeginTime()-firstTimeNano)/1000000);
+                            Date endTime = new Date(firstTimeMillis + (queue.getEndTime()-firstTimeNano)/1000000);
+                            stringBuilder.append("<b>Queue #" + nmb + "</b><br />");
+                            stringBuilder.append("Total blocks: " + queue.getNumberOfBlocks() + "<br />");
+                            //stringBuilder.append("Index block 1: " + queue.getBeginIndex() + "<br />");
+                            //stringBuilder.append("Index block end: " + queue.getEndIndex() + "<br />");
+                            //stringBuilder.append("Begin Time: " + sdf.format(startTime) + "<br />");
+                            //stringBuilder.append("End Time: " + sdf.format(endTime) + "<br />");
+                            stringBuilder.append("Total time: " + String.format(decimalFormat, queue.totalTime()) + "<br />");
+                            stringBuilder.append("Average serving Time: " + String.format(decimalFormat, queue.getAverageServingTime()) + "<br />");
+                            stringBuilder.append("Number of Queue states: " + queue.getNumberOfQueues() + "<br />");
+                            stringBuilder.append("Number of Queue blocks: " + queue.getNumberOfQueueBlocks() + "<br />");
+                            stringBuilder.append("Number of Move blocks: " + queue.getNumberOfMoveBlocks() + "<br />");
+                            stringBuilder.append("<br />------------------------------------<br />");
+
+                        }
+
+                        dialogQueueInfo.setText(Html.fromHtml(stringBuilder.toString()));
+
+
+                        for (MacroBlockObject block : obj.getQueuingMonitoringObject().getBlockArray()) {
+                            //Log.d("RecyclerView Click", "Block: " + block.getBlockMacroState());
+                            //Get information from analysis
+                        }
+                    }
+
+                    dialog.show();
+                    break;
+                }
+            }
+
         }else{
             Log.d("RecyclerView Click", "Press, pos: " + position);
         }

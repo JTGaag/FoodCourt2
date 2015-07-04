@@ -6,8 +6,7 @@
     android:paddingTop="@dimen/activity_zerro_margin"
     android:paddingBottom="@dimen/activity_zerro_margin"
     android:paddingLeft="@dimen/activity_zerro_margin"
-    android:paddingRight="@dimen/activity_zerro_margin"
-    android:background="?android:attr/selectableItemBackground">
+    android:paddingRight="@dimen/activity_zerro_margin">
 
     <android.support.v7.widget.CardView
         xmlns:card_view="http://schemas.android.com/apk/res-auto"
@@ -17,7 +16,9 @@
         android:layout_height="wrap_content"
         card_view:cardCornerRadius="4dp"
         card_view:cardElevation="5dp"
-        card_view:cardUseCompatPadding="true">
+        card_view:cardUseCompatPadding="true"
+        android:background="?android:attr/selectableItemBackground"
+        android:foreground="?android:attr/selectableItemBackground">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -55,8 +56,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/card_activity_info"
-                android:text="Activity Info \nHello How are you"/>
+                android:id="@+id/card_activity_info"/>
 
 
         </LinearLayout>

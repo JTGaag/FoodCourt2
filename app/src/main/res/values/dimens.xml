@@ -4,6 +4,8 @@
     <dimen name="activity_horizontal_margin_small">8dp</dimen>
     <dimen name="activity_horizontal_margin_extra_small">4dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin_small">8dp</dimen>
+    <dimen name="activity_vertical_margin_extra_small">4dp</dimen>
     <dimen name="activity_zerro_margin">0dp</dimen>
 
     <!-- Elevation when button is pressed -->

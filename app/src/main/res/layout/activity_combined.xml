@@ -60,7 +60,8 @@
             <com.aj.map.TouchImageView
                 android:id="@+id/floor_map_zoom"
                 android:layout_width="match_parent"
-                android:layout_height="300dp" />
+                android:layout_height="300dp"
+                android:background="@color/foodcourt_white"/>
 
 
             <EditText

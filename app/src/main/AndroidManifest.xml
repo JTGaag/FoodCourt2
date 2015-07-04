@@ -48,32 +48,32 @@
         <activity
             android:name=".WifiScanActivity"
             android:label="@string/title_activity_wifi_scan"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".BluetoothScanActivity"
             android:label="@string/title_activity_bluetooth_scan"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".MapActivity"
             android:label="@string/title_activity_map"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".CombinedActivity"
             android:label="@string/title_activity_combined"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".MagneticJoostActivity"
             android:label="@string/title_activity_magnetic_joost"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".QueuingActivity"
@@ -83,7 +83,11 @@
         <activity
             android:name=".ActivityMonitoringActivity"
             android:label="@string/title_activity_activity_monitoring"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait" >
+        </activity>
+        <activity
+            android:name=".LocalizationActivity"
+            android:label="@string/title_activity_localization" >
         </activity>
     </application>
 

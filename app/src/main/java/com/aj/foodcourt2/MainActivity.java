@@ -14,7 +14,7 @@ import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button buttonAcelerometer, buttonGraphs, buttonDeleteFile, buttonGraphsAlexander, buttonGraphsJoost, buttonWifiScanActivity, buttonBluetoothScanActivity, buttonMapActivity, buttonCombinedActivity, buttonMagneticJoostActivity, buttonQueuingActivity, buttonActivityMonitoringActivity;
+    Button buttonAcelerometer, buttonGraphs, buttonDeleteFile, buttonGraphsAlexander, buttonGraphsJoost, buttonWifiScanActivity, buttonBluetoothScanActivity, buttonMapActivity, buttonCombinedActivity, buttonMagneticJoostActivity, buttonQueuingActivity, buttonActivityMonitoringActivity, buttonLocalization;
     Context context = this;
 
     @Override
@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
         buttonMagneticJoostActivity = (Button) findViewById(R.id.button_magnetic_joost_activity);
         buttonQueuingActivity = (Button) findViewById(R.id.button_queuing_activity);
         buttonActivityMonitoringActivity = (Button) findViewById(R.id.button_monitoring);
+        buttonLocalization = (Button) findViewById(R.id.button_localization);
 
 
         buttonAcelerometer.setOnClickListener(new View.OnClickListener() {
@@ -131,6 +132,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent eventActivity = new Intent(MainActivity.this, ActivityMonitoringActivity.class);
+                startActivity(eventActivity);
+            }
+        });
+        buttonLocalization.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent eventActivity = new Intent(MainActivity.this, LocalizationActivity.class);
                 startActivity(eventActivity);
             }
         });

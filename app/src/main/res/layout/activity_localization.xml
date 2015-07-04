@@ -1,0 +1,134 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_zerro_margin"
+    android:paddingRight="@dimen/activity_zerro_margin"
+    android:paddingTop="@dimen/activity_zerro_margin"
+    android:paddingBottom="@dimen/activity_zerro_margin"
+    tools:context="com.aj.foodcourt2.LocalizationActivity"
+    android:orientation="vertical">
+
+    <com.aj.map.TouchImageView
+        android:id="@+id/floor_map_zoom"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:background="@color/foodcourt_white"
+        android:elevation="5dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingTop="@dimen/activity_vertical_margin_small"
+        android:paddingBottom="@dimen/activity_vertical_margin_small"
+        android:paddingRight="@dimen/activity_vertical_margin_small"
+        android:paddingLeft="@dimen/activity_vertical_margin_small"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/iv_play"
+                android:src="@drawable/ic_play_arrow_white_24dp"/>
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/iv_stop"
+                android:src="@drawable/ic_stop_white_24dp"/>
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/iv_record"
+                android:src="@drawable/ic_record_white_24dp"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:text="Motion Det"
+                android:id="@+id/button_motion_detection"
+                android:textSize="12sp"
+                android:background="@drawable/custom_btn"
+                android:textColor="@color/foodcourt_cyan_700" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reset"
+                android:id="@+id/button_reset_localization"
+                android:textSize="12sp"
+                android:background="@drawable/custom_btn"
+                android:textColor="@color/foodcourt_cyan_700" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Backtrack"
+                android:id="@+id/button_backtrack"
+                android:textSize="12sp"
+                android:background="@drawable/custom_btn"
+                android:textColor="@color/foodcourt_cyan_700" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Where am I?"
+                android:id="@+id/button_localize"
+                android:textSize="12sp"
+                android:background="@drawable/custom_btn"
+                android:textColor="@color/foodcourt_cyan_700" />
+
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <android.support.v7.widget.CardView
+                xmlns:card_view="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/card_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                card_view:cardCornerRadius="4dp"
+                card_view:cardElevation="5dp"
+                card_view:cardUseCompatPadding="true">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingLeft="@dimen/activity_horizontal_margin_small"
+                    android:paddingRight="@dimen/activity_horizontal_margin_small"
+                    android:paddingTop="@dimen/activity_vertical_margin_small"
+                    android:paddingBottom="@dimen/activity_vertical_margin_small">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Hello"/>
+
+                </LinearLayout>
+
+
+            </android.support.v7.widget.CardView>
+
+        </ScrollView>
+
+
+
+    </LinearLayout>
+
+</LinearLayout>
