@@ -568,5 +568,12 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
     }
 
+    public void reset(){
 
+        //initialize particle manager
+        particleManager = new ParticleManager(10000, rectangleMap, collisionMap, getApplicationContext());
+        //Get the array of current particles
+        particleArray = particleManager.getParticleArray();
+        redrawMap();
+    }
 }
