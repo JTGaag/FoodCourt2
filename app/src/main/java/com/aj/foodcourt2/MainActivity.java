@@ -3,12 +3,15 @@ package com.aj.foodcourt2;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import java.io.File;
 
@@ -21,7 +24,14 @@ public class MainActivity extends AppCompatActivity {
     private final static String PREF_NAME = "foodcourtPreferenceFile";
     private final static String STEP_MODE_NAME = "prefStepMode";
     private final static String DEBUG_MODE_NAME = "prefDebugMode";
+    private final static String LOCATION_MODE_NAME = "prefLocationMode";
+    private final static String LOCATION_MANUAL_NAME = "prefLocationManual";
+    private final static String LOCATION_AUTO_NAME = "prefLocationAuto";
     SharedPreferences settings;
+
+    Location locMe = new Location("");
+    Location locEWI = new Location("");
+    Location locRDW = new Location("");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -151,6 +161,31 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+        //Location stuff
+        //Localization
+        locRDW.setLatitude(52.00069);
+        locRDW.setLongitude(4.36907);
+        locEWI.setLatitude(51.99885);
+        locEWI.setLongitude(4.37395);
+
+        LocationManager lm = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        locMe.setLatitude(location.getLatitude());
+        locMe.setLongitude(location.getLongitude());
+
+        double distanceEWI = locMe.distanceTo(locEWI);
+        double distanceRDW = locMe.distanceTo(locRDW);
+
+        SharedPreferences.Editor editor = settings.edit();
+        if(distanceEWI<distanceRDW){//Closer to EWI
+            editor.putInt(LOCATION_AUTO_NAME, 1);
+            Toast.makeText(this, "Closer to EWI", Toast.LENGTH_SHORT).show();
+        }else{//Closer to RDW
+            editor.putInt(LOCATION_AUTO_NAME, 2);
+            Toast.makeText(this, "Closer to RDW", Toast.LENGTH_SHORT).show();
+        }
+        editor.commit();
 
     }
 

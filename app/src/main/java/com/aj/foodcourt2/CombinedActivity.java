@@ -180,7 +180,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
         //Make maps to be used for distribution and collision
         makeMaps();
-        //makeMaps2();
+        //makeMapsRDW();
 
         //Init bitmap
         bg = Bitmap.createBitmap(3700,1000, Bitmap.Config.ARGB_8888);
@@ -294,13 +294,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                 totalSteps = 0;
             }
         });
-        buttonReset.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                reset();
-            }
 
-        });
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
 
@@ -609,8 +603,8 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
         //send to Server
         HashMap<String, String> postData = new HashMap<String, String>();
-        postData.put("building_id", "1");
-        postData.put("phone_id", "Alexander_phone");
+        postData.put("building_id", "3");
+        postData.put("phone_id", "DummyShine");
         //Add wifi array
         postData.put("wifi_data_array", jsonWifiArray.toString());
 

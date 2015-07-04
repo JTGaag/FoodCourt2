@@ -11,5 +11,5 @@ public interface QueuingListener {
     //Main activity needs to implement this so data can be send back from Handler to activity
     void onNewDataBlock(int count, QueuingSensorData[] dataArray, MacroBlockObject blockObject);
 
-    void onStepCount(ArrayList<Long> timeOfSteps, long entTime);
+    void onStepCount(ArrayList<Long> timeOfSteps, long endTime);
 }

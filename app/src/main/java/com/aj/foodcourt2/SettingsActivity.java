@@ -9,15 +9,20 @@ import android.widget.CompoundButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Switch;
+import android.widget.TextView;
 
 public class SettingsActivity extends AppCompatActivity {
 
-    RadioGroup radioGroup;
-    RadioButton rbQueuing, rbLocalization, rbJoost, rbJork, rbWillem, rbAlexander;
-    Switch sDebugMode;
+    RadioGroup radioGroup, rgLocations;
+    RadioButton rbQueuing, rbLocalization, rbJoost, rbJork, rbWillem, rbAlexander, rbEWI, rbRDW;
+    Switch sDebugMode, sLocationMode;
+    TextView tvAutoLocationName;
     private final static String PREF_NAME = "foodcourtPreferenceFile";
     private final static String STEP_MODE_NAME = "prefStepMode";
     private final static String DEBUG_MODE_NAME = "prefDebugMode";
+    private final static String LOCATION_MODE_NAME = "prefLocationMode";
+    private final static String LOCATION_MANUAL_NAME = "prefLocationManual";
+    private final static String LOCATION_AUTO_NAME = "prefLocationAuto";
     SharedPreferences settings;
 
     @Override
@@ -35,8 +40,13 @@ public class SettingsActivity extends AppCompatActivity {
         rbAlexander = (RadioButton)findViewById(R.id.rb_mode_alexander);
 
         sDebugMode = (Switch)findViewById(R.id.switch_debug_mode);
+        sLocationMode = (Switch)findViewById(R.id.switch_manual_location);
 
         radioGroup = (RadioGroup)findViewById(R.id.rg_mode_selection);
+        rgLocations = (RadioGroup)findViewById(R.id.rg_location_selection);
+
+        tvAutoLocationName = (TextView)findViewById(R.id.tv_auto_location);
+
 
         switch (settings.getInt(STEP_MODE_NAME, 1)){
             case 1:
@@ -61,7 +71,30 @@ public class SettingsActivity extends AppCompatActivity {
                 break;
         }
 
+        switch (settings.getInt(LOCATION_MANUAL_NAME, 1)){
+            case 1:
+                rgLocations.check(R.id.rb_location_ewi);
+                break;
+            case 2:
+                rgLocations.check(R.id.rb_location_rdw);
+                break;
+            default:
+                break;
+        }
+
+        switch (settings.getInt(LOCATION_AUTO_NAME, 1)){
+            case 1:
+                tvAutoLocationName.setText("Automatic location: EWI");
+                break;
+            case 2:
+                tvAutoLocationName.setText("Automatic location: RDW");
+                break;
+            default:
+                break;
+        }
+
         sDebugMode.setChecked(settings.getBoolean(DEBUG_MODE_NAME, false));
+        sLocationMode.setChecked(settings.getBoolean(LOCATION_MODE_NAME, true));
 
 
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
@@ -95,11 +128,39 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
+        rgLocations.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                SharedPreferences.Editor editor = settings.edit();
+                switch(checkedId){
+                    case R.id.rb_location_ewi:
+                        editor.putInt(LOCATION_MANUAL_NAME, 1);
+                        break;
+                    case R.id.rb_location_rdw:
+                        editor.putInt(LOCATION_MANUAL_NAME, 2);
+                        break;
+                    default:
+                        editor.putInt(LOCATION_MANUAL_NAME, 1);
+                        break;
+                }
+                editor.commit();
+            }
+        });
+
         sDebugMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 SharedPreferences.Editor editor = settings.edit();
                 editor.putBoolean(DEBUG_MODE_NAME, isChecked);
+                editor.commit();
+            }
+        });
+
+        sLocationMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                SharedPreferences.Editor editor = settings.edit();
+                editor.putBoolean(LOCATION_MODE_NAME, isChecked);
                 editor.commit();
             }
         });

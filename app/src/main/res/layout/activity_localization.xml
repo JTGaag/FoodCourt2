@@ -44,7 +44,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/iv_stop"
-                android:src="@drawable/ic_stop_white_24dp"/>
+                android:src="@drawable/ic_stop_red_24dp"/>
 
             <ImageView
                 android:layout_width="wrap_content"
@@ -130,6 +130,16 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Hello"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Degree:"
+                        android:id="@+id/tv_azimut_deg"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Steps"
+                        android:id="@+id/tv_steps_localization"/>
 
                 </LinearLayout>
 

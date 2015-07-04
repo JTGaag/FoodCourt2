@@ -2,6 +2,7 @@ package com.aj.foodcourt2;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -11,22 +12,29 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.aj.map.CollisionMap;
 import com.aj.map.LineSegment;
 import com.aj.map.RectangleMap;
 import com.aj.map.TouchImageView;
+import com.aj.particlefilter.GyroData;
+import com.aj.particlefilter.MagneticData;
 import com.aj.particlefilter.MotionDataHandler;
 import com.aj.particlefilter.MotionListener;
 import com.aj.particlefilter.Particle2;
@@ -52,7 +60,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class LocalizationActivity extends AppCompatActivity implements SensorEventListener, QueuingListener, MotionListener, WifiListener, ASyncServerReturn {
+public class LocalizationActivity extends AppCompatActivity implements SensorEventListener, QueuingListener, MotionListener, WifiListener, ASyncServerReturn{
 
     final String LOG_TAG = "Localization activity";
 
@@ -81,6 +89,9 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     private final static String PREF_NAME = "foodcourtPreferenceFile";
     private final static String STEP_MODE_NAME = "prefStepMode";
     private final static String DEBUG_MODE_NAME = "prefDebugMode";
+    private final static String LOCATION_MODE_NAME = "prefLocationMode";
+    private final static String LOCATION_MANUAL_NAME = "prefLocationManual";
+    private final static String LOCATION_AUTO_NAME = "prefLocationAuto";
     private final static int X_OFFSET = 100;
     private final static int Y_OFFSET = 100;
 
@@ -104,9 +115,8 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     //Stuff
     Button buttonMotionDetection, buttonReset, buttonBacktrack, buttonLocalize;
     ImageView ivPlay, ivStop, ivRecord;
+    TextView tvAzimutDegrees, tvSteps;
 
-    //Image to display floor map and particles
-    TouchImageView mImage;
 
     //Paints
     Paint paint = new Paint();
@@ -123,7 +133,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     private double currentGravityY = 0;
     private double currentGravityZ = -9;
 
-    private final int ENLARGE_FACTOR = 100; //50 for EWI building 100 for RDW
+    private int enlargeFactor = 100; //50 for EWI building 100 for RDW
     private final double DIRECTION_SD = 20; //20 for EWI, 25 for RDW
 
     boolean motionDetection = false;
@@ -132,6 +142,15 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     //QDH to be used to analyse acceleration data and output step information and quining information
     private QueuingDataHandler queuingDataHandler;
     private MotionDataHandler motionDataHandler;
+
+    String deviceId = "Unknown";
+
+    Location locRDW = new Location("");
+    Location locEWI = new Location("");
+    Location locMe = new Location("");
+    //LocationManager locationManager;
+
+    LocationManager locationManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -153,6 +172,9 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         ivPlay = (ImageView)findViewById(R.id.iv_play);
         ivStop = (ImageView)findViewById(R.id.iv_stop);
         ivRecord = (ImageView)findViewById(R.id.iv_record);
+
+        tvAzimutDegrees = (TextView)findViewById(R.id.tv_azimut_deg);
+        tvSteps = (TextView)findViewById(R.id.tv_steps_localization);
 
         //Button Shine
         buttonBacktrack = (Button)findViewById(R.id.button_backtrack);
@@ -195,9 +217,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         Map and particle manager stuff
          */
 
-        //Make maps to be used for distribution and collision
-        //makeMaps();
-        makeMaps2();
+
 
         //Init bitmap
         bg = Bitmap.createBitmap(3800,1000, Bitmap.Config.ARGB_8888);
@@ -206,22 +226,53 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         touchImageMapView = (TouchImageView) findViewById(R.id.floor_map_zoom);
         touchImageMapView.setMaxZoom(8f);
 
-        //Make rectangle map
-        rectangleMap = new RectangleMap(rectangleArrayList);
-        rectangleMap.assignWeights();
-        // make cell map
-        cellMap = new RectangleMap(cellArrayList);
-        cellMap.assignWeights();
-        //init COllison Map
-        collisionMap = new CollisionMap(lineSegmentArrayList);
+        //Get Id
+        final TelephonyManager tm = (TelephonyManager) getBaseContext().getSystemService(Context.TELEPHONY_SERVICE);
+        deviceId = tm.getDeviceId();
 
-        //initialize particle manager
-        particleManager = new ParticleManager(10000, rectangleMap, collisionMap, getApplicationContext());
+        //Localization
 
-        //Get the array of current particles
-        particleArray = particleManager.getParticleArray();
+        locRDW.setLatitude(52.00069);
+        locRDW.setLongitude(4.36907);
 
-        redrawMap();
+        locEWI.setLatitude(51.99885);
+        locEWI.setLongitude(4.37395);
+
+        //Toast.makeText(context, "Distance: "+locRDW.distanceTo(locEWI), Toast.LENGTH_LONG).show();
+        //Log.d(LOG_TAG, "Distance: "+locRDW.distanceTo(locEWI));
+
+        LocationManager lm = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        locMe.setLatitude(location.getLatitude());
+        locMe.setLongitude(location.getLongitude());
+        Log.d(LOG_TAG, "Distance RDW-Me: "+locRDW.distanceTo(locMe));
+        Toast.makeText(context, "Distance RDW-Me: "+locRDW.distanceTo(locMe), Toast.LENGTH_LONG).show();
+
+        LocationListener locationListener = new LocationListener() {
+            public void onLocationChanged(Location location) {
+                double longitude = location.getLongitude();
+                double latitude = location.getLatitude();
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
+
+        //lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 10, locationListener);
 
     }
 
@@ -236,6 +287,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         sensorManager.registerListener(this, accelerometerSensor, 10000);
         sensorManager.registerListener(this, gyroSensor, 10000);
 
+        registerReceiver(wifiReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
         /*
         Initialize all data handlers (in onResume to change settings
          */
@@ -250,12 +302,19 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
          */
         queuingDataHandler = new QueuingDataHandler(this, 50, 1, 2, settings.getInt(STEP_MODE_NAME, 2), false);
         motionDataHandler = new MotionDataHandler(this);
+
+        //Map things
+        initiateMapAndParsifalManager();
     }
 
 
     @Override
     protected void onPause() {
         super.onPause();
+        unregisterReceiver(wifiReceiver);
+        //Unregister sensor listeners
+        //TODO: if sensor acrivities are done in a service, look again at this. This may break the sensors in the service
+        sensorManager.unregisterListener(this);
     }
 
     @Override
@@ -283,7 +342,56 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
     @Override
     public void onJSONReturn(JSONObject json) {
+        if(json!=null) {
+            //Log.d("Json Object from server", "JSON: " + json.toString());
+            try {
+                int response_code = json.getInt("response_code");
+                Toast.makeText(getApplicationContext(), "Server response, code: "+response_code,Toast.LENGTH_SHORT).show();
+                switch(response_code){
+                    case 1:
 
+                        break;
+                    case 2:
+                        /*
+                        HOW WIFIDATA is Saved:
+
+                        -BASE (JSONObject):
+                            -response_code (integer)
+                            -error (boolean)
+                            -response (JSONArray):
+                                -WifiAndPositionData (JSONObject):
+                                    -x_position (double)
+                                    -y_position (double)
+                                    -wifi_list (JSONArray):
+                                        -wifi information (JSONObject):
+                                            -BSSID (string)
+                                            -SSID (string)
+                                            -level (integer)
+                         */
+
+                        JSONArray results = json.getJSONArray("response");
+                        int numberOfResponse = results.length();
+                        Log.d(LOG_TAG, "WIFI response list length: " + numberOfResponse);
+                        for(int i=0; i<numberOfResponse; i++){
+                            JSONObject jsonObject = results.getJSONObject(i);
+                            //Log.d(LOG_TAG, "WIFI object: " + jsonObject.toString());
+                            String wifiListString = jsonObject.getString("wifi_list");
+                            //Remove ' " ' at the beginning and end to cast it in JSONArray
+                            wifiListString = wifiListString.substring(1,wifiListString.length()-1);
+                            //Log.d(LOG_TAG, "WIFI list string: " + wifiListString);
+                            JSONArray wifiList = new JSONArray(wifiListString.toString());
+                            Log.d(LOG_TAG, "WIFI list: " + wifiList.toString());
+                        }
+
+                        break;
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }else{
+            Log.d("Json Object from server", "NULL object");
+        }
     }
 
     /**
@@ -296,31 +404,104 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
      */
     @Override
     public void onMotion(double direction, double distance, long timestamp) {
-
+        particleManager.moveAndDistribute(timestamp, direction, DIRECTION_SD, distance, distance/10);
+        redrawMap();
     }
 
     @Override
     public void onWifiCheck(long timestamp) {
-
+        Log.d("WifiState", "State: "+wifiManager.getWifiState());
+        wifiManager.getWifiState();
+        lastWifiScanTime = timestamp;
+        scanStartTime = System.currentTimeMillis();
+        wifiManager.startScan();
     }
 
+    /*
+    Not used in localization
+     */
     @Override
     public void onNewDataBlock(int count, QueuingSensorData[] dataArray, MacroBlockObject blockObject) {
 
     }
 
     @Override
-    public void onStepCount(ArrayList<Long> timeOfSteps, long entTime) {
-
+    public void onStepCount(ArrayList<Long> timeOfSteps, long endTime) {
+        //Log.d("Steps", "Number of steps: " + timeOfSteps.size());
+        tvSteps.setText("number of steps: " + timeOfSteps.size());
+        if(motionDetection) {
+            motionDataHandler.addSteps(timeOfSteps, endTime);
+        }
     }
 
 
     @Override
-    public void onSensorChanged(SensorEvent event) {
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        //Variables used in this method
+        Sensor sensor = sensorEvent.sensor;
+        double x, y, z;
+        long timestamp;
 
+
+        //Switch over sensor type to do corresponding actions for the selected sensor type
+        switch (sensor.getType()){
+
+            case Sensor.TYPE_GRAVITY:
+                //Save gravity values in variable to be used for step detection and for magnetic calculation
+                mGravity = sensorEvent.values;
+                currentGravityX = sensorEvent.values[0];
+                currentGravityY = sensorEvent.values[1];
+                currentGravityZ = sensorEvent.values[2];
+                break;
+
+            case Sensor.TYPE_MAGNETIC_FIELD:
+
+                //Calculate magnetic direction using gravity data and magnetic data
+                mGeomagnetic = sensorEvent.values;
+                if (mGravity != null && mGeomagnetic != null) {
+                    float R[] = new float[9];
+                    float I[] = new float[9];
+                    boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+                    if (success) {
+                        float orientation[] = new float[3];
+                        SensorManager.getOrientation(R, orientation);
+                        azimut = orientation[0]; // orientation contains: azimut, pitch and roll
+                        degrees = (float) azimut * 180 / (float) Math.PI;
+
+                        //tvAzimut.setText("azimut: " + String.format("%-3.3f",azimut) + " [radians]");
+                        tvAzimutDegrees.setText("degrees: " + String.format("%-3.1f",degrees) + "[degrees]");
+
+                        if(motionDetection) {
+                            motionDataHandler.addMagneticData(new MagneticData(azimut, sensorEvent.timestamp));
+                        }
+                    }
+                }
+
+                break;
+            case Sensor.TYPE_ACCELEROMETER:
+
+                //Use accelerometer data in combination with gravity data to detect steps. Sending it to the QDH
+                timestamp = sensorEvent.timestamp;
+                x = sensorEvent.values[0];
+                y = sensorEvent.values[1];
+                z = sensorEvent.values[2];
+                queuingDataHandler.addRawData(new QueuingSensorData(timestamp, x, y,z, currentGravityX, currentGravityY, currentGravityZ));
+
+                break;
+            case Sensor.TYPE_GYROSCOPE:
+                if(motionDetection) {
+                    motionDataHandler.addGyroData(new GyroData(sensorEvent.values[2], sensorEvent.timestamp));
+                }
+                break;
+            default:
+                break;
+        }
     }
 
 
+    /*
+    Not used for localization
+     */
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
@@ -328,7 +509,31 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
     @Override
     public void onWifiData(List<ScanResult> wifiList) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Scan time (sec): " + ((System.currentTimeMillis()-scanStartTime)/1000.0));
+        Log.d("scantime", "scanStartTime: " + scanStartTime);
+        stringBuilder.append("\n\n");
+        for(int i=0; i<wifiList.size(); i++){
+            stringBuilder.append(new Integer(i+1).toString() + ": ");
+            stringBuilder.append(wifiList.get(i).BSSID + " : " + wifiList.get(i).SSID + " . " + WifiManager.calculateSignalLevel(wifiList.get(i).level, 255) + " . " + wifiList.get(i).frequency);
+            //stringBuilder.append(wifiList.get(i).toString());
+            stringBuilder.append("\n\n");
+        }
+//        tvWifi.setText(stringBuilder.toString());
+        Toast.makeText(getApplicationContext(), "Wifi update", Toast.LENGTH_SHORT).show();
 
+        //Check if timestamp is already in list else add wifi data to list (check is needed for random wifi upadtes by android od. if not doing this wifiData is saved without knowing where it is saved)
+        boolean notInList = true;
+        for(WifiData wifiData : wifiDataArrayList){
+            if(wifiData.getTimestamp() == lastWifiScanTime){
+                notInList = false;
+            }
+        }
+
+        //If not already in List add wifi list to arraylist
+        if(notInList){
+            wifiDataArrayList.add(new WifiData(lastWifiScanTime, wifiList));
+        }
     }
 
 
@@ -351,34 +556,34 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
         Canvas canvas = new Canvas(bg);
         for (Rectangle rec : rectangleMap.getRectangles()) {
-            canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paint);
+            canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paint);
         }
         int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
         if ((r >0)&&(r<cellArrayList.size())&&(particleManager.hasConverged())){
             Rectangle rec = cellArrayList.get(r);
-            canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paintCell);
-            canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paintCellStroke);
+            canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCell);
+            canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCellStroke);
         }
 
 
         Particle2[] tmpParticleArray = particleManager.getParticleArray();
 
         for (Particle2 particle : tmpParticleArray) {
-            //canvas.drawLine((float) particle.getOldX() * ENLARGE_FACTOR, (float) particle.getOldY() * ENLARGE_FACTOR, (float) particle.getX() * ENLARGE_FACTOR, (float) particle.getY() * ENLARGE_FACTOR, paintMove);
+            //canvas.drawLine((float) particle.getOldX() * enlargeFactor, (float) particle.getOldY() * enlargeFactor, (float) particle.getX() * enlargeFactor, (float) particle.getY() * enlargeFactor, paintMove);
             if (!particle.isDestroyed()) {
-                canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDot);
+                canvas.drawPoint((float) (particle.getX() * enlargeFactor)+X_OFFSET, (float) (particle.getY() * enlargeFactor)+Y_OFFSET, paintDot);
             } else {
-                //canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDotDestroy);
+                //canvas.drawPoint((float) (particle.getX() * enlargeFactor), (float) (particle.getY() * enlargeFactor), paintDotDestroy);
             }
 
         }
 
         for (LineSegment line : collisionMap.getLineSegments()) {
-            canvas.drawLine((float) line.getX1() * ENLARGE_FACTOR, (float) line.getY1() * ENLARGE_FACTOR, (float) line.getX2() * ENLARGE_FACTOR, (float) line.getY2() * ENLARGE_FACTOR, paintCollision);
+            canvas.drawLine((float) (line.getX1() * enlargeFactor)+X_OFFSET, (float) (line.getY1() * enlargeFactor)+Y_OFFSET, (float) (line.getX2() * enlargeFactor)+X_OFFSET, (float) (line.getY2() * enlargeFactor)+Y_OFFSET, paintCollision);
         }
 
         particleManager.calculateMean();
-        canvas.drawPoint((float) (particleManager.getMeanX() * ENLARGE_FACTOR), (float) (particleManager.getMeanY() * ENLARGE_FACTOR), paintMean);
+        canvas.drawPoint((float) (particleManager.getMeanX() * enlargeFactor +X_OFFSET), (float) (particleManager.getMeanY() * enlargeFactor)+Y_OFFSET, paintMean);
         //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
 
 
@@ -389,13 +594,13 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
             beginCoordinates[1] = trackedMeanData.get(i).getyPosition();
             endCoordinates[0] = trackedMeanData.get(i+1).getxPosition();
             endCoordinates[1] = trackedMeanData.get(i+1).getyPosition();
-            canvas.drawLine((float) beginCoordinates[0] * ENLARGE_FACTOR, (float) beginCoordinates[1] * ENLARGE_FACTOR, (float) endCoordinates[0] * ENLARGE_FACTOR, (float) endCoordinates[1] * ENLARGE_FACTOR, paintBacktrack);
+            canvas.drawLine((float) (beginCoordinates[0] * enlargeFactor)+X_OFFSET, (float) (beginCoordinates[1] * enlargeFactor)+Y_OFFSET, (float) (endCoordinates[0] * enlargeFactor)+X_OFFSET, (float) (endCoordinates[1] * enlargeFactor)+Y_OFFSET, paintBacktrack);
             Log.d("trackedCoordinates", "xAxis: " + beginCoordinates[0] + " yAxis: " + beginCoordinates[1] + "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
             //Log.d("trackedEndCoordinates", "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
         }
 
         //noinspection deprecation
-        mImage.setImageBitmap(bg);
+        touchImageMapView.setImageBitmap(bg);
     }
 
     private void sendWifiDataToServer(){
@@ -441,15 +646,84 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         }
         Log.d("wifi_data_array", "wifi_data_array: " + jsonWifiArray.toString());
 
+
+        int buildingId = 1;
+        if(settings.getBoolean(LOCATION_MODE_NAME, true)){
+            buildingId = settings.getInt(LOCATION_MANUAL_NAME, 1);
+        }else{
+            buildingId = settings.getInt(LOCATION_AUTO_NAME, 1);
+        }
         //send to Server
         HashMap<String, String> postData = new HashMap<String, String>();
-        postData.put("building_id", "1");
-        postData.put("phone_id", "Alexander_phone");
+        postData.put("building_id", Integer.toString(buildingId));
+        postData.put("phone_id", deviceId);
         //Add wifi array
         postData.put("wifi_data_array", jsonWifiArray.toString());
 
         AsyncHttpPost asyncHttpPost = new AsyncHttpPost(LocalizationActivity.this, postData);
         asyncHttpPost.execute("https://trimbl-registration.herokuapp.com/wifi/addwifidata");
+    }
+
+    private void initiateMapAndParsifalManager(){
+        //Clear lists
+        rectangleArrayList.clear();
+        cellArrayList.clear();
+        lineSegmentArrayList.clear();
+
+        //TODO: edit cell map RDW
+        //Make maps to be used for distribution and collision
+        //makeMapsEWI();
+        //makeMapsRDW();
+
+        if(settings.getBoolean(LOCATION_MODE_NAME, true)){//Manual mode
+            switch(settings.getInt(LOCATION_MANUAL_NAME, 1)){
+                case 1://EWI
+                    makeMapsEWI();
+                    enlargeFactor = 50;
+                    break;
+                case 2://RDW
+                    makeMapsRDW();
+                    enlargeFactor = 100;
+                    break;
+                default: //EWI
+                    makeMapsEWI();
+                    enlargeFactor = 50;
+                    break;
+            }
+        }else{//Automatic mode
+            switch(settings.getInt(LOCATION_AUTO_NAME, 1)){
+                case 1://EWI
+                    makeMapsEWI();
+                    enlargeFactor = 50;
+                    break;
+                case 2://RDW
+                    makeMapsRDW();
+                    enlargeFactor = 100;
+                    break;
+                default: //EWI
+                    makeMapsEWI();
+                    enlargeFactor = 50;
+                    break;
+            }
+        }
+
+        //Make rectangle map
+        rectangleMap = new RectangleMap(rectangleArrayList);
+        rectangleMap.assignWeights();
+        // make cell map
+        cellMap = new RectangleMap(cellArrayList);
+        cellMap.assignWeights();
+
+        //init Collison Map
+        collisionMap = new CollisionMap(lineSegmentArrayList);
+
+        //initialize particle manager
+        particleManager = new ParticleManager(10000, rectangleMap, collisionMap, getApplicationContext());
+
+        //Get the array of current particles
+        particleArray = particleManager.getParticleArray();
+
+        redrawMap();
     }
 
     private void redrawMap(){
@@ -462,7 +736,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
         //Get all the rectangle chapes (rooms)
         for (Rectangle rec : rectangleMap.getRectangles()) {
-            canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR)+X_OFFSET, (float) (rec.getY() * ENLARGE_FACTOR)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR)+Y_OFFSET, paint);
+            canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paint);
         }
 
         //Draw cell when converged
@@ -471,8 +745,8 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
             int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
             if ((r > 0) && (r < cellArrayList.size()) && (particleManager.hasConverged())) {
                 Rectangle rec = cellArrayList.get(r);
-                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR)+X_OFFSET, (float) (rec.getY() * ENLARGE_FACTOR)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR)+Y_OFFSET, paintCell);
-                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR)+X_OFFSET, (float) (rec.getY() * ENLARGE_FACTOR)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR)+Y_OFFSET, paintCellStroke);
+                canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCell);
+                canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCellStroke);
             }
         }
 
@@ -482,23 +756,23 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
         //Draw particles
         for (Particle2 particle : tmpParticleArray) {
-            //canvas.drawLine((float) particle.getOldX() * ENLARGE_FACTOR, (float) particle.getOldY() * ENLARGE_FACTOR, (float) particle.getX() * ENLARGE_FACTOR, (float) particle.getY() * ENLARGE_FACTOR, paintMove);
+            //canvas.drawLine((float) particle.getOldX() * enlargeFactor, (float) particle.getOldY() * enlargeFactor, (float) particle.getX() * enlargeFactor, (float) particle.getY() * enlargeFactor, paintMove);
             if (!particle.isDestroyed()) {
-                canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR)+X_OFFSET, (float) (particle.getY() * ENLARGE_FACTOR)+Y_OFFSET, paintDot);
+                canvas.drawPoint((float) (particle.getX() * enlargeFactor)+X_OFFSET, (float) (particle.getY() * enlargeFactor)+Y_OFFSET, paintDot);
             } else {
-                //canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDotDestroy);
+                //canvas.drawPoint((float) (particle.getX() * enlargeFactor), (float) (particle.getY() * enlargeFactor), paintDotDestroy);
             }
 
         }
 
         //Draw collision map
         for (LineSegment line : collisionMap.getLineSegments()) {
-            canvas.drawLine((float) (line.getX1() * ENLARGE_FACTOR)+X_OFFSET, (float) (line.getY1() * ENLARGE_FACTOR)+Y_OFFSET, (float) (line.getX2() * ENLARGE_FACTOR)+X_OFFSET, (float) (line.getY2() * ENLARGE_FACTOR)+Y_OFFSET, paintCollision);
+            canvas.drawLine((float) (line.getX1() * enlargeFactor)+X_OFFSET, (float) (line.getY1() * enlargeFactor)+Y_OFFSET, (float) (line.getX2() * enlargeFactor)+X_OFFSET, (float) (line.getY2() * enlargeFactor)+Y_OFFSET, paintCollision);
         }
 
         particleManager.calculateMean();
         //Draw mean point DONE: calulate mean before hand here
-        canvas.drawPoint((float) (particleManager.getMeanX() * ENLARGE_FACTOR)+X_OFFSET, (float) (particleManager.getMeanY() * ENLARGE_FACTOR)+Y_OFFSET, paintMean);
+        canvas.drawPoint((float) (particleManager.getMeanX() * enlargeFactor)+X_OFFSET, (float) (particleManager.getMeanY() * enlargeFactor)+Y_OFFSET, paintMean);
         //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
 
 
@@ -572,7 +846,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         paintBacktrack.setStrokeWidth(6.0f);
     }
 
-    protected void makeMaps(){
+    protected void makeMapsEWI(){
         ////////////////////////////////////////////////////////////////////////
         //
         //Collision Map
@@ -663,7 +937,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
     }
 
-    protected void makeMaps2(){
+    protected void makeMapsRDW(){
         ////////////////////////////////////////////////////////////////////////
         //
         //Collision Map
@@ -760,5 +1034,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         cellArrayList.add(new Rectangle(60, 8.2, 4, 6.1));   //c1
 
     }
+
+
 
 }
