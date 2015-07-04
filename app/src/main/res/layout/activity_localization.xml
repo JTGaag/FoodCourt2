@@ -7,17 +7,22 @@
     tools:context="com.aj.foodcourt2.LocalizationActivity"
     android:orientation="vertical">
 
-    <com.aj.map.TouchImageView
-        android:id="@+id/floor_map_zoom"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="220dp"
-        android:background="@color/foodcourt_white"
-        android:elevation="5dp"/>
+        android:layout_height="wrap_content">
+        <com.aj.map.TouchImageView
+            android:id="@+id/floor_map_zoom"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"/>
+    </LinearLayout>
+
+    <include
+        layout="@layout/divider" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingTop="@dimen/activity_vertical_margin_small"
+        android:paddingTop="@dimen/activity_zerro_margin"
         android:paddingBottom="@dimen/activity_vertical_margin_small"
         android:paddingRight="@dimen/activity_vertical_margin_small"
         android:paddingLeft="@dimen/activity_vertical_margin_small"
@@ -27,7 +32,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal|center_vertical">
 
             <ImageView
                 android:layout_width="wrap_content"
@@ -48,6 +53,9 @@
                 android:src="@drawable/ic_record_white_24dp"/>
 
         </LinearLayout>
+
+        <include
+            layout="@layout/divider" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -92,6 +100,9 @@
                 android:textColor="@color/foodcourt_cyan_700" />
 
         </LinearLayout>
+
+        <include
+            layout="@layout/divider" />
 
         <ScrollView
             android:layout_width="match_parent"
