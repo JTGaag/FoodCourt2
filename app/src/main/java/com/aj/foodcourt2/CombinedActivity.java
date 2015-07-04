@@ -106,7 +106,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     //Stuff
     EditText etDirection, etDistance;
-    Button buttonMove, buttonMotionDetection, buttonBacktrack, buttonGetWifiData, buttonStepStart, buttonStepStop;
+    Button buttonMove, buttonMotionDetection, buttonBacktrack, buttonGetWifiData, buttonStepStart, buttonStepStop,buttonReset;
     Bitmap bg;
 
     private final int ENLARGE_FACTOR = 50; //50 for EWI building 100 for RDW
@@ -171,6 +171,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         buttonGetWifiData = (Button)findViewById(R.id.button_get_wifi_data);
         buttonStepStart = (Button)findViewById(R.id.button_step_start);
         buttonStepStop = (Button)findViewById(R.id.button_step_stop);
+        buttonReset = (Button)findViewById(R.id.button_reset_localization);
 
 
         //Do stuff with settings
@@ -293,7 +294,13 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
                 totalSteps = 0;
             }
         });
+        buttonReset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                reset();
+            }
 
+        });
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
 
@@ -952,5 +959,12 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
 
     }
 
+    public void reset(){
 
+        //initialize particle manager
+        particleManager = new ParticleManager(10000, rectangleMap, collisionMap, getApplicationContext());
+        //Get the array of current particles
+        particleArray = particleManager.getParticleArray();
+        redrawMap();
+    }
 }
