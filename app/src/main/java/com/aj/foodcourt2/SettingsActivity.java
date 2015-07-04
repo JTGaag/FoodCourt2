@@ -5,15 +5,19 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.CompoundButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.Switch;
 
 public class SettingsActivity extends AppCompatActivity {
 
     RadioGroup radioGroup;
     RadioButton rbQueuing, rbLocalization, rbJoost, rbJork, rbWillem, rbAlexander;
+    Switch sDebugMode;
     private final static String PREF_NAME = "foodcourtPreferenceFile";
     private final static String STEP_MODE_NAME = "prefStepMode";
+    private final static String DEBUG_MODE_NAME = "prefDebugMode";
     SharedPreferences settings;
 
     @Override
@@ -29,6 +33,8 @@ public class SettingsActivity extends AppCompatActivity {
         rbJork = (RadioButton)findViewById(R.id.rb_mode_jork);
         rbWillem = (RadioButton)findViewById(R.id.rb_mode_willem);
         rbAlexander = (RadioButton)findViewById(R.id.rb_mode_alexander);
+
+        sDebugMode = (Switch)findViewById(R.id.switch_debug_mode);
 
         radioGroup = (RadioGroup)findViewById(R.id.rg_mode_selection);
 
@@ -54,6 +60,9 @@ public class SettingsActivity extends AppCompatActivity {
             default:
                 break;
         }
+
+        sDebugMode.setChecked(settings.getBoolean(DEBUG_MODE_NAME, false));
+
 
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -82,6 +91,15 @@ public class SettingsActivity extends AppCompatActivity {
                         editor.putInt(STEP_MODE_NAME, 1);
                         break;
                 }
+                editor.commit();
+            }
+        });
+
+        sDebugMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                SharedPreferences.Editor editor = settings.edit();
+                editor.putBoolean(DEBUG_MODE_NAME, isChecked);
                 editor.commit();
             }
         });

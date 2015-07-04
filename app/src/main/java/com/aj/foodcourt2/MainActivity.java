@@ -2,6 +2,7 @@ package com.aj.foodcourt2;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
@@ -17,10 +18,17 @@ public class MainActivity extends AppCompatActivity {
     Button buttonAcelerometer, buttonGraphs, buttonDeleteFile, buttonGraphsAlexander, buttonGraphsJoost, buttonWifiScanActivity, buttonBluetoothScanActivity, buttonMapActivity, buttonCombinedActivity, buttonMagneticJoostActivity, buttonQueuingActivity, buttonActivityMonitoringActivity, buttonLocalization;
     Context context = this;
 
+    private final static String PREF_NAME = "foodcourtPreferenceFile";
+    private final static String STEP_MODE_NAME = "prefStepMode";
+    private final static String DEBUG_MODE_NAME = "prefDebugMode";
+    SharedPreferences settings;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        settings = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
 
         buttonAcelerometer = (Button)findViewById(R.id.button_accelerometer);
         buttonGraphs = (Button)findViewById(R.id.button_graphs);
@@ -167,5 +175,29 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        boolean debugMode = settings.getBoolean(DEBUG_MODE_NAME, false);
+        int visibility = View.GONE;
+        //set views
+        if(debugMode){
+            visibility = View.VISIBLE;
+        }
+
+        buttonQueuingActivity.setVisibility(visibility);
+        buttonAcelerometer.setVisibility(visibility);
+        buttonBluetoothScanActivity.setVisibility(visibility);
+        buttonCombinedActivity.setVisibility(visibility);
+        buttonDeleteFile.setVisibility(visibility);
+        buttonGraphs.setVisibility(visibility);
+        buttonGraphsAlexander.setVisibility(visibility);
+        buttonGraphsJoost.setVisibility(visibility);
+        buttonMagneticJoostActivity.setVisibility(visibility);
+        buttonMapActivity.setVisibility(visibility);
+        buttonWifiScanActivity.setVisibility(visibility);
     }
 }

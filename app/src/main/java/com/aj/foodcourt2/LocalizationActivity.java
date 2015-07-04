@@ -73,6 +73,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     final double NS2S = 1.0/1000000000.0;
     private final static String PREF_NAME = "foodcourtPreferenceFile";
     private final static String STEP_MODE_NAME = "prefStepMode";
+    private final static String DEBUG_MODE_NAME = "prefDebugMode";
     private final static int X_OFFSET = 100;
     private final static int Y_OFFSET = 100;
 
@@ -166,6 +167,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
             @Override
             public void onClick(View v) {
                 motionDetection = !motionDetection;
+                changeImages();
                 Toast.makeText(context, "Motiondeatection: " + motionDetection, Toast.LENGTH_SHORT).show();
             }
         });
