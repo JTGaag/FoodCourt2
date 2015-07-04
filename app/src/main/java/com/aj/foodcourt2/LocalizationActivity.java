@@ -15,6 +15,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -31,18 +32,24 @@ import com.aj.particlefilter.MotionListener;
 import com.aj.particlefilter.Particle2;
 import com.aj.particlefilter.ParticleManager;
 import com.aj.particlefilter.Rectangle;
+import com.aj.particlefilter.TimePositionData;
 import com.aj.queuing.MacroBlockObject;
 import com.aj.queuing.QueuingDataHandler;
 import com.aj.queuing.QueuingListener;
 import com.aj.queuing.QueuingSensorData;
 import com.aj.server.ASyncServerReturn;
+import com.aj.server.AsyncHttpPost;
 import com.aj.wifi.WifiData;
 import com.aj.wifi.WifiListener;
+import com.aj.wifi.WifiPositionData;
 import com.aj.wifi.WifiReceiver;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class LocalizationActivity extends AppCompatActivity implements SensorEventListener, QueuingListener, MotionListener, WifiListener, ASyncServerReturn {
@@ -77,7 +84,6 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     private final static int X_OFFSET = 100;
     private final static int Y_OFFSET = 100;
 
-
     //Settings
     SharedPreferences settings;
 
@@ -98,6 +104,9 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     //Stuff
     Button buttonMotionDetection, buttonReset, buttonBacktrack, buttonLocalize;
     ImageView ivPlay, ivStop, ivRecord;
+
+    //Image to display floor map and particles
+    TouchImageView mImage;
 
     //Paints
     Paint paint = new Paint();
@@ -154,7 +163,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         buttonBacktrack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                backTrack();
             }
         });
         buttonLocalize.setOnClickListener(new View.OnClickListener() {
@@ -327,6 +336,121 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     /*
     PAINTS and MAPS
      */
+    public void backTrack(){
+
+        sendWifiDataToServer();
+
+        ArrayList<TimePositionData> trackedMeanData;
+        double[] beginCoordinates = new double[2];
+        double[] endCoordinates = new double[2];
+
+        //trackedMeanData = particleManager.backTrack();
+        trackedMeanData = particleManager.backTrack2();
+
+        bg.eraseColor(android.graphics.Color.TRANSPARENT);
+
+        Canvas canvas = new Canvas(bg);
+        for (Rectangle rec : rectangleMap.getRectangles()) {
+            canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paint);
+        }
+        int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
+        if ((r >0)&&(r<cellArrayList.size())&&(particleManager.hasConverged())){
+            Rectangle rec = cellArrayList.get(r);
+            canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paintCell);
+            canvas.drawRect((float)(rec.getX()*ENLARGE_FACTOR), (float)(rec.getY()*ENLARGE_FACTOR), (float)((rec.getX() + rec.getWidth())*ENLARGE_FACTOR), (float)((rec.getY() + rec.getHeight())*ENLARGE_FACTOR), paintCellStroke);
+        }
+
+
+        Particle2[] tmpParticleArray = particleManager.getParticleArray();
+
+        for (Particle2 particle : tmpParticleArray) {
+            //canvas.drawLine((float) particle.getOldX() * ENLARGE_FACTOR, (float) particle.getOldY() * ENLARGE_FACTOR, (float) particle.getX() * ENLARGE_FACTOR, (float) particle.getY() * ENLARGE_FACTOR, paintMove);
+            if (!particle.isDestroyed()) {
+                canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDot);
+            } else {
+                //canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDotDestroy);
+            }
+
+        }
+
+        for (LineSegment line : collisionMap.getLineSegments()) {
+            canvas.drawLine((float) line.getX1() * ENLARGE_FACTOR, (float) line.getY1() * ENLARGE_FACTOR, (float) line.getX2() * ENLARGE_FACTOR, (float) line.getY2() * ENLARGE_FACTOR, paintCollision);
+        }
+
+        particleManager.calculateMean();
+        canvas.drawPoint((float) (particleManager.getMeanX() * ENLARGE_FACTOR), (float) (particleManager.getMeanY() * ENLARGE_FACTOR), paintMean);
+        //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
+
+
+
+
+        for (int i = 0; i < (trackedMeanData.size()-1); i++) {
+            beginCoordinates[0] = trackedMeanData.get(i).getxPosition();
+            beginCoordinates[1] = trackedMeanData.get(i).getyPosition();
+            endCoordinates[0] = trackedMeanData.get(i+1).getxPosition();
+            endCoordinates[1] = trackedMeanData.get(i+1).getyPosition();
+            canvas.drawLine((float) beginCoordinates[0] * ENLARGE_FACTOR, (float) beginCoordinates[1] * ENLARGE_FACTOR, (float) endCoordinates[0] * ENLARGE_FACTOR, (float) endCoordinates[1] * ENLARGE_FACTOR, paintBacktrack);
+            Log.d("trackedCoordinates", "xAxis: " + beginCoordinates[0] + " yAxis: " + beginCoordinates[1] + "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
+            //Log.d("trackedEndCoordinates", "xAxis: " + endCoordinates[0] + " yAxis: " + endCoordinates[1]);
+        }
+
+        //noinspection deprecation
+        mImage.setImageBitmap(bg);
+    }
+
+    private void sendWifiDataToServer(){
+        /*
+        BUILDING ID
+        1: EWI
+        2: RDW
+        3: Others
+         */
+
+        //Variables needed
+        ArrayList<WifiPositionData> wifiPositionToSend = new ArrayList<>();
+        ArrayList<TimePositionData> timePositionFromBacktrack = particleManager.backTrack2();
+
+        //Connect wifi data with position
+        for(WifiData wifiData: wifiDataArrayList){//Loop over all wifi data to get
+            for(TimePositionData timePositionData: timePositionFromBacktrack){
+                if(wifiData.getTimestamp() == timePositionData.getTimestamp()){
+                    wifiPositionToSend.add(new WifiPositionData(wifiData, timePositionData));
+                }
+            }
+        }
+
+        //Check if still a list with
+        if(wifiPositionToSend.size()<1){
+            Log.d(LOG_TAG, "WiFi list is empty no things to be saved");
+            return;
+        }
+
+        JSONArray jsonWifiArray = new JSONArray();
+
+        for(WifiPositionData wifiPositionData: wifiPositionToSend){
+            JSONObject tempJSON = new JSONObject();
+            try {
+                tempJSON.put("x_pos", wifiPositionData.getTimePositionData().getxPosition());
+                tempJSON.put("y_pos", wifiPositionData.getTimePositionData().getyPosition());
+                tempJSON.put("wifi_list", wifiPositionData.getWifiData().getWifiListJSONArray().toString());
+                Log.d("wifi_list", "wifi_list: " + wifiPositionData.getWifiData().getWifiListJSONArray().toString());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            jsonWifiArray.put(tempJSON);
+        }
+        Log.d("wifi_data_array", "wifi_data_array: " + jsonWifiArray.toString());
+
+        //send to Server
+        HashMap<String, String> postData = new HashMap<String, String>();
+        postData.put("building_id", "1");
+        postData.put("phone_id", "Alexander_phone");
+        //Add wifi array
+        postData.put("wifi_data_array", jsonWifiArray.toString());
+
+        AsyncHttpPost asyncHttpPost = new AsyncHttpPost(LocalizationActivity.this, postData);
+        asyncHttpPost.execute("https://trimbl-registration.herokuapp.com/wifi/addwifidata");
+    }
 
     private void redrawMap(){
 
