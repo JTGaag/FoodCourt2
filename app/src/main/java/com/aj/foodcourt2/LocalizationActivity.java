@@ -916,24 +916,24 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         ////////////////////////////////////////////////////////////////////////
 
         double difference = 0.8;
-        cellArrayList.add(new Rectangle(2, 6.1, 4, 2.1));   //c19
-        cellArrayList.add(new Rectangle(0, 0, 4, 6.1));     //c18
-        cellArrayList.add(new Rectangle(4, 0, 4, 6.1));     //c17
-        cellArrayList.add(new Rectangle(6, 6.1, 4, 2.1));   //c16
-        cellArrayList.add(new Rectangle(10, 6.1, 4, 2.1));  //c15
-        cellArrayList.add(new Rectangle(14, 6.1, 4, 2.1));  //c14
-        cellArrayList.add(new Rectangle(12, 0, 4, 6.1));    //c13
-        cellArrayList.add(new Rectangle(16, 0, 4, 6.1));    //c12
-        cellArrayList.add(new Rectangle(12, 11.3, 4, 3));   //c11
-        cellArrayList.add(new Rectangle(36-difference, 6.1, 4, 2.1));   //c9
-        cellArrayList.add(new Rectangle(40-difference, 6.1, 4, 2.1));   //c8
-        cellArrayList.add(new Rectangle(44-difference, 6.1, 4, 2.1));   //c7
-        cellArrayList.add(new Rectangle(48-difference, 6.1, 4, 2.1));   //c6
-        cellArrayList.add(new Rectangle(52-difference, 6.1, 4, 2.1));   //c5
-        cellArrayList.add(new Rectangle(56-difference, 6.1, 4, 2.1));   //c4
-        cellArrayList.add(new Rectangle(60-difference, 6.1, 4, 2.1));   //c3
-        cellArrayList.add(new Rectangle(56, 8.2, 4, 6.1));   //c2
-        cellArrayList.add(new Rectangle(60, 8.2, 4, 6.1));   //c1
+        cellArrayList.add(new Rectangle(2, 6.1, 4, 2.1, "Cell 19"));   //c19
+        cellArrayList.add(new Rectangle(0, 0, 4, 6.1, "Cell 18"));     //c18
+        cellArrayList.add(new Rectangle(4, 0, 4, 6.1, "Cell 17"));     //c17
+        cellArrayList.add(new Rectangle(6, 6.1, 4, 2.1, "Cell 16"));   //c16
+        cellArrayList.add(new Rectangle(10, 6.1, 4, 2.1, "Cell 15"));  //c15
+        cellArrayList.add(new Rectangle(14, 6.1, 4, 2.1, "Cell 14"));  //c14
+        cellArrayList.add(new Rectangle(12, 0, 4, 6.1, "Cell 13"));    //c13
+        cellArrayList.add(new Rectangle(16, 0, 4, 6.1, "Cell 12"));    //c12
+        cellArrayList.add(new Rectangle(12, 11.3, 4, 3, "Cell 11"));   //c11
+        cellArrayList.add(new Rectangle(36-difference, 6.1, 4, 2.1, "Cell 09"));   //c9
+        cellArrayList.add(new Rectangle(40-difference, 6.1, 4, 2.1, "Cell 08"));   //c8
+        cellArrayList.add(new Rectangle(44-difference, 6.1, 4, 2.1, "Cell 07"));   //c7
+        cellArrayList.add(new Rectangle(48-difference, 6.1, 4, 2.1, "Cell 06"));   //c6
+        cellArrayList.add(new Rectangle(52-difference, 6.1, 4, 2.1, "Cell 05"));   //c5
+        cellArrayList.add(new Rectangle(56-difference, 6.1, 4, 2.1, "Cell 04"));   //c4
+        cellArrayList.add(new Rectangle(60-difference, 6.1, 4, 2.1, "Cell 03"));   //c3
+        cellArrayList.add(new Rectangle(56, 8.2, 4, 6.1, "Cell 02"));   //c2
+        cellArrayList.add(new Rectangle(60, 8.2, 4, 6.1, "Cell 01"));   //c1
 
     }
 
@@ -1014,24 +1014,26 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         ////////////////////////////////////////////////////////////////////////
 
         double difference = 0.8;
-        cellArrayList.add(new Rectangle(2, 6.1, 4, 2.1));   //c19
-        cellArrayList.add(new Rectangle(0, 0, 4, 6.1));     //c18
-        cellArrayList.add(new Rectangle(4, 0, 4, 6.1));     //c17
-        cellArrayList.add(new Rectangle(6, 6.1, 4, 2.1));   //c16
-        cellArrayList.add(new Rectangle(10, 6.1, 4, 2.1));  //c15
-        cellArrayList.add(new Rectangle(14, 6.1, 4, 2.1));  //c14
-        cellArrayList.add(new Rectangle(12, 0, 4, 6.1));    //c13
-        cellArrayList.add(new Rectangle(16, 0, 4, 6.1));    //c12
-        cellArrayList.add(new Rectangle(12, 11.3, 4, 3));   //c11
-        cellArrayList.add(new Rectangle(36-difference, 6.1, 4, 2.1));   //c9
-        cellArrayList.add(new Rectangle(40-difference, 6.1, 4, 2.1));   //c8
-        cellArrayList.add(new Rectangle(44-difference, 6.1, 4, 2.1));   //c7
-        cellArrayList.add(new Rectangle(48-difference, 6.1, 4, 2.1));   //c6
-        cellArrayList.add(new Rectangle(52-difference, 6.1, 4, 2.1));   //c5
-        cellArrayList.add(new Rectangle(56-difference, 6.1, 4, 2.1));   //c4
-        cellArrayList.add(new Rectangle(60-difference, 6.1, 4, 2.1));   //c3
-        cellArrayList.add(new Rectangle(56, 8.2, 4, 6.1));   //c2
-        cellArrayList.add(new Rectangle(60, 8.2, 4, 6.1));   //c1
+        cellArrayList.add(new Rectangle(0, 0, 5.045, 3.36, "Willem's Room"));//Willems kamer
+        cellArrayList.add(new Rectangle(5.045, 0, 4.28, 3.36, "Victor's Room"));//Victors kamer
+        cellArrayList.add(new Rectangle(9.325, 0, 4.285, 3.36, "Jerom's Room"));//Jeroms kamer
+        cellArrayList.add(new Rectangle(13.61, 0, 5.01, 3.36, "Jork's Room"));//Jorks kamer
+        cellArrayList.add(new Rectangle(0, 3.36, 3.03, 3.89, "General Room 1"));//GR1
+        cellArrayList.add(new Rectangle(3.03, 4.62, 2.4, 2.63, "General Room 2"));//GR2
+        cellArrayList.add(new Rectangle(12.95, 4.62, 2.29, 2.63, "Joost's Room 1"));//Joost1
+        cellArrayList.add(new Rectangle(15.24, 3.36, 3.38, 3.89, "Joost's Room 2"));//Joost2
+
+        cellArrayList.add(new Rectangle(3.03, 3.36, 12.21, 1.26, "Hall 1"));//Hall1
+        cellArrayList.add(new Rectangle(5.43, 4.62, 2.67, .32, "Hall 2"));//Hall2
+        cellArrayList.add(new Rectangle(9.55, 4.62, 1.5, 2.63, "Hall 3"));//Hall3
+
+        cellArrayList.add(new Rectangle(11.75, 4.62, 1.2, 2.63, "Laundry Room"));//wasHok
+
+        cellArrayList.add(new Rectangle(5.43, 4.94, 1.35, 2.31, "Shower 1"));//Douche 1
+        cellArrayList.add(new Rectangle(6.78, 4.94, 1.32, 2.31, "Shower 2"));//Douche 2
+
+        cellArrayList.add(new Rectangle(8.1, 6.17, 1.45, 1.08, "Toilet 1"));//wc1
+        cellArrayList.add(new Rectangle(8.1, 5.09, 1.45, 1.08, "Toilet 2"));//wc2
 
     }
 
