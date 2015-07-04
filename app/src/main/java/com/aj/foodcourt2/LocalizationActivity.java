@@ -17,7 +17,10 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.aj.map.CollisionMap;
 import com.aj.map.LineSegment;
@@ -70,6 +73,9 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     final double NS2S = 1.0/1000000000.0;
     private final static String PREF_NAME = "foodcourtPreferenceFile";
     private final static String STEP_MODE_NAME = "prefStepMode";
+    private final static int X_OFFSET = 100;
+    private final static int Y_OFFSET = 100;
+
 
     //Settings
     SharedPreferences settings;
@@ -90,6 +96,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
     //Stuff
     Button buttonMotionDetection, buttonReset, buttonBacktrack, buttonLocalize;
+    ImageView ivPlay, ivStop, ivRecord;
 
     //Paints
     Paint paint = new Paint();
@@ -132,11 +139,42 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         wifiReceiver = new WifiReceiver(this, wifiManager);
 
+        //Imageviews
+        ivPlay = (ImageView)findViewById(R.id.iv_play);
+        ivStop = (ImageView)findViewById(R.id.iv_stop);
+        ivRecord = (ImageView)findViewById(R.id.iv_record);
+
         //Button Shine
         buttonBacktrack = (Button)findViewById(R.id.button_backtrack);
         buttonLocalize = (Button)findViewById(R.id.button_localize);
         buttonMotionDetection = (Button)findViewById(R.id.button_motion_detection);
         buttonReset = (Button)findViewById(R.id.button_reset_localization);
+
+        buttonBacktrack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+        buttonLocalize.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+        buttonMotionDetection.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                motionDetection = !motionDetection;
+                Toast.makeText(context, "Motiondeatection: " + motionDetection, Toast.LENGTH_SHORT).show();
+            }
+        });
+        buttonReset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                reset();
+            }
+        });
 
         //Do stuff with settings
         settings = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
@@ -151,7 +189,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         makeMaps2();
 
         //Init bitmap
-        bg = Bitmap.createBitmap(3700,1000, Bitmap.Config.ARGB_8888);
+        bg = Bitmap.createBitmap(3800,1000, Bitmap.Config.ARGB_8888);
         //Set paitns
         setPaints();
         touchImageMapView = (TouchImageView) findViewById(R.id.floor_map_zoom);
@@ -298,7 +336,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
         //Get all the rectangle chapes (rooms)
         for (Rectangle rec : rectangleMap.getRectangles()) {
-            canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paint);
+            canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR)+X_OFFSET, (float) (rec.getY() * ENLARGE_FACTOR)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR)+Y_OFFSET, paint);
         }
 
         //Draw cell when converged
@@ -307,8 +345,8 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
             int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
             if ((r > 0) && (r < cellArrayList.size()) && (particleManager.hasConverged())) {
                 Rectangle rec = cellArrayList.get(r);
-                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paintCell);
-                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR), (float) (rec.getY() * ENLARGE_FACTOR), (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR), (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR), paintCellStroke);
+                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR)+X_OFFSET, (float) (rec.getY() * ENLARGE_FACTOR)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR)+Y_OFFSET, paintCell);
+                canvas.drawRect((float) (rec.getX() * ENLARGE_FACTOR)+X_OFFSET, (float) (rec.getY() * ENLARGE_FACTOR)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * ENLARGE_FACTOR)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * ENLARGE_FACTOR)+Y_OFFSET, paintCellStroke);
             }
         }
 
@@ -320,7 +358,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         for (Particle2 particle : tmpParticleArray) {
             //canvas.drawLine((float) particle.getOldX() * ENLARGE_FACTOR, (float) particle.getOldY() * ENLARGE_FACTOR, (float) particle.getX() * ENLARGE_FACTOR, (float) particle.getY() * ENLARGE_FACTOR, paintMove);
             if (!particle.isDestroyed()) {
-                canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDot);
+                canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR)+X_OFFSET, (float) (particle.getY() * ENLARGE_FACTOR)+Y_OFFSET, paintDot);
             } else {
                 //canvas.drawPoint((float) (particle.getX() * ENLARGE_FACTOR), (float) (particle.getY() * ENLARGE_FACTOR), paintDotDestroy);
             }
@@ -329,17 +367,46 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
         //Draw collision map
         for (LineSegment line : collisionMap.getLineSegments()) {
-            canvas.drawLine((float) line.getX1() * ENLARGE_FACTOR, (float) line.getY1() * ENLARGE_FACTOR, (float) line.getX2() * ENLARGE_FACTOR, (float) line.getY2() * ENLARGE_FACTOR, paintCollision);
+            canvas.drawLine((float) (line.getX1() * ENLARGE_FACTOR)+X_OFFSET, (float) (line.getY1() * ENLARGE_FACTOR)+Y_OFFSET, (float) (line.getX2() * ENLARGE_FACTOR)+X_OFFSET, (float) (line.getY2() * ENLARGE_FACTOR)+Y_OFFSET, paintCollision);
         }
 
         particleManager.calculateMean();
         //Draw mean point DONE: calulate mean before hand here
-        canvas.drawPoint((float) (particleManager.getMeanX() * ENLARGE_FACTOR), (float) (particleManager.getMeanY() * ENLARGE_FACTOR), paintMean);
+        canvas.drawPoint((float) (particleManager.getMeanX() * ENLARGE_FACTOR)+X_OFFSET, (float) (particleManager.getMeanY() * ENLARGE_FACTOR)+Y_OFFSET, paintMean);
         //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
 
 
         //noinspection deprecation
         touchImageMapView.setImageBitmap(bg);
+    }
+
+    public void changeImages(){
+        if(motionDetection){
+            ivPlay.setImageResource(R.drawable.ic_play_arrow_red_24dp);
+        }else{
+            ivPlay.setImageResource(R.drawable.ic_play_arrow_white_24dp);
+        }
+
+        if(!motionDetection){
+            ivStop.setImageResource(R.drawable.ic_stop_red_24dp);
+        }else{
+            ivStop.setImageResource(R.drawable.ic_stop_white_24dp);
+        }
+
+        if(motionDetection){
+            ivRecord.setImageResource(R.drawable.ic_record_red_24dp);
+        }else{
+            ivRecord.setImageResource(R.drawable.ic_record_white_24dp);
+        }
+    }
+
+    public void reset(){
+
+        //initialize particle manager
+        particleManager = new ParticleManager(10000, rectangleMap, collisionMap, getApplicationContext());
+        //Get the array of current particles
+        particleArray = particleManager.getParticleArray();
+        redrawMap();
     }
 
     protected void setPaints(){
@@ -568,12 +635,4 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
     }
 
-    public void reset(){
-
-        //initialize particle manager
-        particleManager = new ParticleManager(10000, rectangleMap, collisionMap, getApplicationContext());
-        //Get the array of current particles
-        particleArray = particleManager.getParticleArray();
-        redrawMap();
-    }
 }
