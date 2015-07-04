@@ -116,6 +116,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     Button buttonMotionDetection, buttonReset, buttonBacktrack, buttonLocalize;
     ImageView ivPlay, ivStop, ivRecord;
     TextView tvAzimutDegrees, tvSteps;
+    TextView currentLocation;
 
 
     //Paints
@@ -743,7 +744,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         if(particleManager.hasConverged()) {
             particleManager.calculateMean();
             int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
-            if ((r > 0) && (r < cellArrayList.size()) && (particleManager.hasConverged())) {
+            if ((r >= 0) && (r < cellArrayList.size()) && (particleManager.hasConverged())) {
                 Rectangle rec = cellArrayList.get(r);
                 canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCell);
                 canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCellStroke);
@@ -807,6 +808,22 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         //Get the array of current particles
         particleArray = particleManager.getParticleArray();
         redrawMap();
+    }
+    public void getNearestLocation(){
+
+       // Canvas canvas = new Canvas(bg);
+        particleManager.calculateMean();
+        int r = cellMap.nearestRectangle(particleManager.getMeanX(), particleManager.getMeanY());
+        if ((r >= 0) && (r < cellArrayList.size())) {
+            Rectangle rec = cellArrayList.get(r);
+           // canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCell);
+          //  canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCellStroke);
+            currentLocation.setText("coordinates: " + (particleManager.getMeanX() + particleManager.getMeanY()) + "nearest cell: " + rec.getRectangleName() );
+
+        }
+
+
+
     }
 
     protected void setPaints(){

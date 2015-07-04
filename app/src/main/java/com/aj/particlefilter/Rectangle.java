@@ -13,7 +13,10 @@ public class Rectangle {
     double x, y; //x to the left, y down
     double area;
     double areaWeight;
+    double centerX, centerY;
     String rectangleName = "Unkown";
+
+
 
     /**
      *
@@ -28,6 +31,8 @@ public class Rectangle {
         this.width = width;
         this.height = height;
         this.area = width * height;
+        centerX = this.width/2 + x;
+        centerY = this.height/2 +y;
     }
 
     public Rectangle(double x, double y, double width, double height, String rectangleName) {
@@ -36,6 +41,8 @@ public class Rectangle {
         this.width = width;
         this.height = height;
         this.rectangleName = rectangleName;
+        centerX = this.width/2 + x;
+        centerY = this.height/2 +y;
     }
 
     public double getHeight() {
@@ -89,4 +96,13 @@ public class Rectangle {
     public void setRectangleName(String rectangleName) {
         this.rectangleName = rectangleName;
     }
+
+    public double getCenterX() {
+        return centerX;
+    }
+
+    public double getCenterY() {
+        return centerY;
+    }
+
 }
