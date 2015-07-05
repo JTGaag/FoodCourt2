@@ -47,6 +47,8 @@ import com.aj.queuing.QueuingListener;
 import com.aj.queuing.QueuingSensorData;
 import com.aj.server.ASyncServerReturn;
 import com.aj.server.AsyncHttpPost;
+import com.aj.wifi.AccessPointData;
+import com.aj.wifi.ReturnedWifiPositionData;
 import com.aj.wifi.WifiData;
 import com.aj.wifi.WifiListener;
 import com.aj.wifi.WifiPositionData;
@@ -113,7 +115,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     Bitmap bg;
 
     //Stuff
-    Button buttonMotionDetection, buttonReset, buttonBacktrack, buttonLocalize;
+    Button buttonMotionDetection, buttonReset, buttonBacktrack, buttonLocalize, buttonGetWifiData;
     ImageView ivPlay, ivStop, ivRecord;
     TextView tvAzimutDegrees, tvSteps;
     TextView tvCurrentLocation;
@@ -153,6 +155,15 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
     LocationManager locationManager;
 
+    //WiFi Shizzle
+    ArrayList<ReturnedWifiPositionData> returnedWifiPositionDataArrayList = new ArrayList<>();
+    ArrayList<AccessPointData> currentWifiData = new ArrayList<>();
+    boolean wifiRequest = false;
+    boolean serverRequest = false;
+    boolean wifiIsIn = false;
+    boolean serverIsIn = false;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -183,6 +194,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         buttonLocalize = (Button)findViewById(R.id.button_localize);
         buttonMotionDetection = (Button)findViewById(R.id.button_motion_detection);
         buttonReset = (Button)findViewById(R.id.button_reset_localization);
+        buttonGetWifiData = (Button)findViewById(R.id.button_get_wifi_data);
 
         buttonBacktrack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -208,6 +220,38 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
             @Override
             public void onClick(View v) {
                 reset();
+            }
+        });
+
+        buttonGetWifiData.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                serverRequest = true;
+                wifiRequest = true;
+                /*
+                //////////////////////////////
+                //Server Request
+                //////////////////////////////
+                 */
+                int buildingId = 1;
+                if(settings.getBoolean(LOCATION_MODE_NAME, true)){
+                    buildingId = settings.getInt(LOCATION_MANUAL_NAME, 1);
+                }else{
+                    buildingId = settings.getInt(LOCATION_AUTO_NAME, 1);
+                }
+
+                HashMap<String, String> postData = new HashMap<String, String>();
+                postData.put("building_id", Integer.toString(buildingId));
+
+                AsyncHttpPost asyncHttpPost = new AsyncHttpPost(LocalizationActivity.this, postData);
+                asyncHttpPost.execute("https://trimbl-registration.herokuapp.com/wifi/showforbuilding");
+
+                /*
+                //////////////////////////////
+                //Wifi Request
+                //////////////////////////////
+                 */
+                wifiManager.startScan();
             }
         });
 
@@ -307,6 +351,16 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
         //Map things
         initiateMapAndParsifalManager();
+
+
+        //Set views
+        boolean debugMode = settings.getBoolean(DEBUG_MODE_NAME, false);
+        int visibility = View.GONE;
+        if(debugMode){
+            visibility = View.VISIBLE;
+        }
+        buttonGetWifiData.setVisibility(visibility);
+
     }
 
 
@@ -371,6 +425,9 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
                                             -level (integer)
                          */
 
+                        //Clear list for new data to be stored
+                        returnedWifiPositionDataArrayList.clear();
+
                         JSONArray results = json.getJSONArray("response");
                         int numberOfResponse = results.length();
                         Log.d(LOG_TAG, "WIFI response list length: " + numberOfResponse);
@@ -382,7 +439,26 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
                             wifiListString = wifiListString.substring(1,wifiListString.length()-1);
                             //Log.d(LOG_TAG, "WIFI list string: " + wifiListString);
                             JSONArray wifiList = new JSONArray(wifiListString.toString());
-                            Log.d(LOG_TAG, "WIFI list: " + wifiList.toString());
+                            //Log.d(LOG_TAG, "WIFI list: " + wifiList.toString());
+
+                            //Save wifi data
+                            ArrayList<AccessPointData> tempAccessPointDataList = new ArrayList<>();
+                            for(int j=0; j<wifiList.length(); j++){
+                                JSONObject wifiObj = wifiList.getJSONObject(j);
+                                tempAccessPointDataList.add(new AccessPointData(wifiObj.getString("BSSID"), wifiObj.getString("SSID"), wifiObj.getInt("level")));
+                            }
+                            //Save the data in objects
+                            returnedWifiPositionDataArrayList.add(new ReturnedWifiPositionData(jsonObject.getString("phone_id"), jsonObject.getDouble("x_position"), jsonObject.getDouble("y_position"), tempAccessPointDataList));
+                        }
+
+                        if(serverRequest){
+                            serverRequest = false;
+                            serverIsIn = true;
+                            Log.d(LOG_TAG, "Server is in");
+
+                            if(wifiIsIn){
+                                compareWifiData();
+                            }
                         }
 
                         break;
@@ -511,6 +587,25 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
     @Override
     public void onWifiData(List<ScanResult> wifiList) {
+        if(wifiRequest){
+            wifiRequest = false;
+            wifiIsIn = true;
+            Log.d(LOG_TAG, "Wifi is in");
+            //Clear list
+            currentWifiData.clear();
+            //Add all the APs to the list
+            for(ScanResult scanResult : wifiList){
+                currentWifiData.add(new AccessPointData(scanResult.BSSID, scanResult.SSID, scanResult.level));
+            }
+
+            //if server data is in start comparing
+            if(serverIsIn){
+                compareWifiData();
+            }
+            return;
+        }
+
+
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("Scan time (sec): " + ((System.currentTimeMillis()-scanStartTime)/1000.0));
         Log.d("scantime", "scanStartTime: " + scanStartTime);
@@ -541,8 +636,51 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
 
     /*
-    PAINTS and MAPS
+    When Wifi and server wifi is in do calculation and draw on map
      */
+    public void compareWifiData(){
+        //Reset ecexute conditions
+        serverIsIn = false;
+        wifiIsIn = false;
+
+        Log.d(LOG_TAG, "Succesfully at compareWifiData");
+
+        double minDifference = 9999999999.0;
+        double maxDifference = 0.0;
+        int minId = 0;
+        int maxId = 0;
+        double theoryMax = 0;
+        for(ReturnedWifiPositionData wifiPositionData : returnedWifiPositionDataArrayList){
+            double tempDiff = wifiPositionData.calculateDifference(currentWifiData);
+            Log.d(LOG_TAG, "Diff: " + tempDiff);
+            if(tempDiff>maxDifference){
+                maxDifference = tempDiff;
+                maxId = returnedWifiPositionDataArrayList.indexOf(wifiPositionData);
+            }
+            if(tempDiff<minDifference){
+                minDifference = tempDiff;
+                minId = returnedWifiPositionDataArrayList.indexOf(wifiPositionData);
+            }
+        }
+
+        ReturnedWifiPositionData bestPoint = returnedWifiPositionDataArrayList.get(minId);
+        ReturnedWifiPositionData worstPoint = returnedWifiPositionDataArrayList.get(maxId);
+
+        for(AccessPointData ap : currentWifiData){
+            theoryMax += (ap.getSignalStrength()*ap.getSignalStrength());
+        }
+        theoryMax = Math.sqrt(theoryMax);
+
+        for(ReturnedWifiPositionData wifiPositionData : returnedWifiPositionDataArrayList) {
+            wifiPositionData.calulateCalcDifference(theoryMax);
+        }
+
+        Log.d(LOG_TAG, "Max differenc (from data): " + theoryMax);
+        Log.d(LOG_TAG, "Min Diff: " + minDifference + " Max DIff: " + maxDifference + " minId: " + minId + " maxId: " + maxId);
+
+    }
+
+
     public void backTrack(){
 
         sendWifiDataToServer();
@@ -666,6 +804,9 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         asyncHttpPost.execute("https://trimbl-registration.herokuapp.com/wifi/addwifidata");
     }
 
+    /*
+    PAINTS and MAPS
+     */
     private void initiateMapAndParsifalManager(){
         //Clear lists
         rectangleArrayList.clear();
@@ -726,6 +867,59 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         particleArray = particleManager.getParticleArray();
 
         redrawMap();
+    }
+
+    private void redrawMapWithWifiData(){
+        //reset bitmap
+        bg.eraseColor(android.graphics.Color.TRANSPARENT);
+
+        //Make canvas to draw on
+        Canvas canvas = new Canvas(bg);
+
+        //Get all the rectangle chapes (rooms)
+        for (Rectangle rec : rectangleMap.getRectangles()) {
+            canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paint);
+        }
+
+        //Draw cell when converged
+        if(particleManager.hasConverged()) {
+            particleManager.calculateMean();
+            int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
+            if ((r >= 0) && (r < cellArrayList.size()) && (particleManager.hasConverged())) {
+                Rectangle rec = cellArrayList.get(r);
+                canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCell);
+                canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCellStroke);
+            }
+        }
+
+
+        //Get particles
+        Particle2[] tmpParticleArray = particleManager.getParticleArray();
+
+        //Draw particles
+        for (Particle2 particle : tmpParticleArray) {
+            //canvas.drawLine((float) particle.getOldX() * enlargeFactor, (float) particle.getOldY() * enlargeFactor, (float) particle.getX() * enlargeFactor, (float) particle.getY() * enlargeFactor, paintMove);
+            if (!particle.isDestroyed()) {
+                canvas.drawPoint((float) (particle.getX() * enlargeFactor)+X_OFFSET, (float) (particle.getY() * enlargeFactor)+Y_OFFSET, paintDot);
+            } else {
+                //canvas.drawPoint((float) (particle.getX() * enlargeFactor), (float) (particle.getY() * enlargeFactor), paintDotDestroy);
+            }
+
+        }
+
+        //Draw collision map
+        for (LineSegment line : collisionMap.getLineSegments()) {
+            canvas.drawLine((float) (line.getX1() * enlargeFactor)+X_OFFSET, (float) (line.getY1() * enlargeFactor)+Y_OFFSET, (float) (line.getX2() * enlargeFactor)+X_OFFSET, (float) (line.getY2() * enlargeFactor)+Y_OFFSET, paintCollision);
+        }
+
+        particleManager.calculateMean();
+        //Draw mean point DONE: calulate mean before hand here
+        canvas.drawPoint((float) (particleManager.getMeanX() * enlargeFactor)+X_OFFSET, (float) (particleManager.getMeanY() * enlargeFactor)+Y_OFFSET, paintMean);
+        //Log.d("Mean values", "x: " + particleManager.getMeanX() + " y:" + particleManager.getMeanY());
+
+
+        //noinspection deprecation
+        touchImageMapView.setImageBitmap(bg);
     }
 
     private void redrawMap(){
@@ -811,17 +1005,56 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         redrawMap();
     }
 
-
     public void getNearestLocation(){
 
        // Canvas canvas = new Canvas(bg);
         particleManager.calculateMean();
-        int r = cellMap.nearestRectangle(particleManager.getMeanX(), particleManager.getMeanY());
-        if ((r >= 0) && (r < cellArrayList.size())) {
-            Rectangle rec = cellArrayList.get(r);
+        int rCell = cellMap.nearestRectangle(particleManager.getMeanX(), particleManager.getMeanY());
+        if ((rCell >= 0) && (rCell < cellArrayList.size())) {
+            Rectangle recCell = cellArrayList.get(rCell);
            // canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCell);
           //  canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCellStroke);
-            tvCurrentLocation.setText("x: " + particleManager.getMeanX() + " y: " + particleManager.getMeanY() + "\nnearest cell: " + rec.getRectangleName());
+            tvCurrentLocation.setText("x: " + particleManager.getMeanX() + " y: " + particleManager.getMeanY() + "\nnearest cell: " + recCell.getRectangleName());
+
+            //Draw Map
+            bg.eraseColor(android.graphics.Color.TRANSPARENT);
+
+            Canvas canvas = new Canvas(bg);
+            for (Rectangle rec : rectangleMap.getRectangles()) {
+                canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paint);
+            }
+            int r = cellMap.isPointinRectangle(particleManager.getMeanX(), particleManager.getMeanY());
+            if ((r >0)&&(r<cellArrayList.size())&&(particleManager.hasConverged())){
+                Rectangle rec = cellArrayList.get(r);
+                canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCell);
+                canvas.drawRect((float) (rec.getX() * enlargeFactor)+X_OFFSET, (float) (rec.getY() * enlargeFactor)+Y_OFFSET, (float) ((rec.getX() + rec.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((rec.getY() + rec.getHeight()) * enlargeFactor)+Y_OFFSET, paintCellStroke);
+            }
+
+            canvas.drawRect((float) (recCell.getX() * enlargeFactor)+X_OFFSET, (float) (recCell.getY() * enlargeFactor)+Y_OFFSET, (float) ((recCell.getX() + recCell.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((recCell.getY() + recCell.getHeight()) * enlargeFactor)+Y_OFFSET, paintCell);
+            canvas.drawRect((float) (recCell.getX() * enlargeFactor)+X_OFFSET, (float) (recCell.getY() * enlargeFactor)+Y_OFFSET, (float) ((recCell.getX() + recCell.getWidth()) * enlargeFactor)+X_OFFSET, (float) ((recCell.getY() + recCell.getHeight()) * enlargeFactor)+Y_OFFSET, paintCellStroke);
+
+
+
+            Particle2[] tmpParticleArray = particleManager.getParticleArray();
+
+            for (Particle2 particle : tmpParticleArray) {
+
+                if (!particle.isDestroyed()) {
+                    canvas.drawPoint((float) (particle.getX() * enlargeFactor)+X_OFFSET, (float) (particle.getY() * enlargeFactor)+Y_OFFSET, paintDot);
+                }
+
+            }
+
+            for (LineSegment line : collisionMap.getLineSegments()) {
+                canvas.drawLine((float) (line.getX1() * enlargeFactor)+X_OFFSET, (float) (line.getY1() * enlargeFactor)+Y_OFFSET, (float) (line.getX2() * enlargeFactor)+X_OFFSET, (float) (line.getY2() * enlargeFactor)+Y_OFFSET, paintCollision);
+            }
+
+            particleManager.calculateMean();
+            canvas.drawPoint((float) (particleManager.getMeanX() * enlargeFactor + X_OFFSET), (float) (particleManager.getMeanY() * enlargeFactor) + Y_OFFSET, paintMean);
+
+
+            //noinspection deprecation
+            touchImageMapView.setImageBitmap(bg);
 
         }
 
@@ -991,13 +1224,13 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         lineSegmentArrayList.add(new LineSegment(3.03, 4.62, 5.43, 4.62));//wall hall/GR
 
         lineSegmentArrayList.add(new LineSegment(0, 3.36, 3.79, 3.36));//wall kamer/hall1
-        lineSegmentArrayList.add(new LineSegment(3.79, 3.36, 4.765, 3.36));//wall kamer/hall1 Deur willem
+        //lineSegmentArrayList.add(new LineSegment(3.79, 3.36, 4.765, 3.36));//wall kamer/hall1 Deur willem
         lineSegmentArrayList.add(new LineSegment(4.765, 3.36, 5.325, 3.36));//wall kamer/hall1 W/V
         //lineSegmentArrayList.add(new LineSegment(5.325, 3.36, 6.3, 3.36));//wall kamer/hall1 Deur Victor
         lineSegmentArrayList.add(new LineSegment(6.3, 3.36, 12.355, 3.36));//wall kamer/hall1 J/V
         //lineSegmentArrayList.add(new LineSegment(12.355, 3.36, 13.33, 3.36));//wall kamer/hall1 Deur Jerom
         lineSegmentArrayList.add(new LineSegment(13.33, 3.36, 13.89, 3.36));//wall kamer/hall1 J/J
-        lineSegmentArrayList.add(new LineSegment(13.89, 3.36, 14.865, 3.36));//wall kamer/hall1 Deur Jork
+        //lineSegmentArrayList.add(new LineSegment(13.89, 3.36, 14.865, 3.36));//wall kamer/hall1 Deur Jork
         lineSegmentArrayList.add(new LineSegment(14.865, 3.36, 18.62, 3.36));//wall kamer/hall1 J/J
 
 
@@ -1006,10 +1239,10 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         //Rectangle (room) map
         //
         ////////////////////////////////////////////////////////////////////////
-        //rectangleArrayList.add(new Rectangle(0, 0, 5.045, 3.36));//Willems kamer
+        rectangleArrayList.add(new Rectangle(0, 0, 5.045, 3.36));//Willems kamer
         rectangleArrayList.add(new Rectangle(5.045, 0, 4.28, 3.36));//Victors kamer
         rectangleArrayList.add(new Rectangle(9.325, 0, 4.285, 3.36));//Jeroms kamer
-        //rectangleArrayList.add(new Rectangle(13.61, 0, 5.01, 3.36));//Jorks kamer
+        rectangleArrayList.add(new Rectangle(13.61, 0, 5.01, 3.36));//Jorks kamer
         rectangleArrayList.add(new Rectangle(0, 3.36, 3.03, 3.89));//GR1
         rectangleArrayList.add(new Rectangle(3.03, 4.62, 2.4, 2.63));//GR2
         rectangleArrayList.add(new Rectangle(12.95, 4.62, 2.29, 2.63));//Joost1

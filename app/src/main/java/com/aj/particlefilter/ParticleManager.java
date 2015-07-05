@@ -23,7 +23,7 @@ public class ParticleManager {
     double meanY = 0.0;
     Context context;
     final int RADIUS = 4;
-    final double PERCENTAGE = 0.90;
+    final double PERCENTAGE = 0.80;
     long saveTimestamp = 0;
 
     private ArrayList<Particle2[]> savedData = new ArrayList<Particle2[]>();
