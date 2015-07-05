@@ -1,5 +1,7 @@
 package com.aj.wifi;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 
 /**
@@ -38,9 +40,12 @@ public class ReturnedWifiPositionData {
             for(AccessPointData accessPoint : accessPointDataArrayList){
                 if(bssidComp.equalsIgnoreCase(accessPoint.getBssid())){
                     level = accessPoint.getSignalStrength();
+                    if(level<0){
+                        Log.d("level", "level is lowe than 0");
+                    }
                 }
             }
-            sumLevelDiffSquared += ((levelComp-level)*(levelComp-level));
+            sumLevelDiffSquared += ((levelComp- Math.abs(level))*(levelComp-Math.abs(level)));
         }
 
         difference = Math.sqrt(sumLevelDiffSquared);
@@ -48,8 +53,9 @@ public class ReturnedWifiPositionData {
         return difference;
     }
 
-    public void calulateCalcDifference(double theoryMaxDifference){
+    public double calulateCalcDifference(double theoryMaxDifference){
         calcDifference = theoryMaxDifference - difference;
+        return calcDifference;
     }
 
     public double getCalcDifference() {

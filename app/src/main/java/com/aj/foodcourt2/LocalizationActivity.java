@@ -130,6 +130,8 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     Paint paintCollision = new Paint();
     Paint paintMean = new Paint();
     Paint paintBacktrack = new Paint();
+    Paint paintWifi = new Paint();
+    Paint paintWifiBorder = new Paint();
 
     //Variables to save gravity data
     private double currentGravityX = 0;
@@ -158,10 +160,13 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     //WiFi Shizzle
     ArrayList<ReturnedWifiPositionData> returnedWifiPositionDataArrayList = new ArrayList<>();
     ArrayList<AccessPointData> currentWifiData = new ArrayList<>();
+    double maxCalcDifference = 1;
     boolean wifiRequest = false;
     boolean serverRequest = false;
     boolean wifiIsIn = false;
     boolean serverIsIn = false;
+    final double WIFI_MAX_DRAW_SIZE = 45;
+    final double WIFI_MIN_DRAW_SIZE = 5;
 
 
     @Override
@@ -672,11 +677,13 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         theoryMax = Math.sqrt(theoryMax);
 
         for(ReturnedWifiPositionData wifiPositionData : returnedWifiPositionDataArrayList) {
-            wifiPositionData.calulateCalcDifference(theoryMax);
+            maxCalcDifference = Math.max(wifiPositionData.calulateCalcDifference(theoryMax), maxCalcDifference);
         }
 
+        redrawMapWithWifiData();
+
         Log.d(LOG_TAG, "Max differenc (from data): " + theoryMax);
-        Log.d(LOG_TAG, "Min Diff: " + minDifference + " Max DIff: " + maxDifference + " minId: " + minId + " maxId: " + maxId);
+        Log.d(LOG_TAG, "Min Diff: " + minDifference + " Max Diff: " + maxDifference + " minId: " + minId + " maxId: " + maxId);
 
     }
 
@@ -901,10 +908,14 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
             //canvas.drawLine((float) particle.getOldX() * enlargeFactor, (float) particle.getOldY() * enlargeFactor, (float) particle.getX() * enlargeFactor, (float) particle.getY() * enlargeFactor, paintMove);
             if (!particle.isDestroyed()) {
                 canvas.drawPoint((float) (particle.getX() * enlargeFactor)+X_OFFSET, (float) (particle.getY() * enlargeFactor)+Y_OFFSET, paintDot);
-            } else {
-                //canvas.drawPoint((float) (particle.getX() * enlargeFactor), (float) (particle.getY() * enlargeFactor), paintDotDestroy);
             }
 
+        }
+
+        for(ReturnedWifiPositionData positionData : returnedWifiPositionDataArrayList){
+            double size = positionData.getCalcDifference() / maxCalcDifference * WIFI_MAX_DRAW_SIZE + WIFI_MIN_DRAW_SIZE;
+            canvas.drawOval((float)((positionData.getxPosition() * enlargeFactor)+X_OFFSET - size),(float)((positionData.getyPosition() * enlargeFactor)+Y_OFFSET-size),(float)((positionData.getxPosition() * enlargeFactor)+X_OFFSET+size),(float)((positionData.getyPosition() * enlargeFactor)+Y_OFFSET+size), paintWifi);
+            canvas.drawOval((float)((positionData.getxPosition() * enlargeFactor)+X_OFFSET - size),(float)((positionData.getyPosition() * enlargeFactor)+Y_OFFSET-size),(float)((positionData.getxPosition() * enlargeFactor)+X_OFFSET+size),(float)((positionData.getyPosition() * enlargeFactor)+Y_OFFSET+size), paintWifiBorder);
         }
 
         //Draw collision map
@@ -955,8 +966,6 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
             //canvas.drawLine((float) particle.getOldX() * enlargeFactor, (float) particle.getOldY() * enlargeFactor, (float) particle.getX() * enlargeFactor, (float) particle.getY() * enlargeFactor, paintMove);
             if (!particle.isDestroyed()) {
                 canvas.drawPoint((float) (particle.getX() * enlargeFactor)+X_OFFSET, (float) (particle.getY() * enlargeFactor)+Y_OFFSET, paintDot);
-            } else {
-                //canvas.drawPoint((float) (particle.getX() * enlargeFactor), (float) (particle.getY() * enlargeFactor), paintDotDestroy);
             }
 
         }
@@ -1097,6 +1106,13 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         paintBacktrack.setColor(getResources().getColor(R.color.foodcourt_pink_accent_500));
         paintBacktrack.setStyle(Paint.Style.FILL);
         paintBacktrack.setStrokeWidth(6.0f);
+
+        paintWifi.setColor(getResources().getColor(R.color.foodcourt_light_green_a_400));
+        paintWifi.setStyle(Paint.Style.FILL);
+
+        paintWifiBorder.setColor(getResources().getColor(R.color.foodcourt_light_green_900));
+        paintWifiBorder.setStyle(Paint.Style.STROKE);
+        paintWifiBorder.setStrokeWidth(5.0f);
     }
 
     protected void makeMapsEWI(){
