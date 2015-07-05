@@ -59,37 +59,43 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:id="@+id/rb_mode_queuing"
-                            android:text="Default queuing mode"/>
+                            android:text="Default queuing mode"
+                            android:buttonTint="@color/foodcourt_cyan_700"/>
 
                         <RadioButton
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:id="@+id/rb_mode_localization"
-                            android:text="Default localization mode"/>
+                            android:text="Default localization mode"
+                            android:buttonTint="@color/foodcourt_cyan_700"/>
 
                         <RadioButton
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:id="@+id/rb_mode_joost"
-                            android:text="Joost optimized mode"/>
+                            android:text="Joost optimized mode"
+                            android:buttonTint="@color/foodcourt_cyan_700"/>
 
                         <RadioButton
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:id="@+id/rb_mode_jork"
-                            android:text="Jork optimized mode"/>
+                            android:text="Jork optimized mode"
+                            android:buttonTint="@color/foodcourt_cyan_700"/>
 
                         <RadioButton
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:id="@+id/rb_mode_willem"
-                            android:text="Willem optimized mode"/>
+                            android:text="Willem optimized mode"
+                            android:buttonTint="@color/foodcourt_cyan_700"/>
 
                         <RadioButton
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:id="@+id/rb_mode_alexander"
-                            android:text="Alexander optimized mode"/>
+                            android:text="Alexander optimized mode"
+                            android:buttonTint="@color/foodcourt_cyan_700"/>
 
                     </RadioGroup>
 
@@ -139,7 +145,9 @@
                         android:id="@+id/switch_manual_location"
                         android:layout_gravity="right"
                         android:paddingTop="@dimen/activity_vertical_margin_small"
-                        android:paddingBottom="@dimen/activity_vertical_margin_small"/>
+                        android:paddingBottom="@dimen/activity_vertical_margin_small"
+                        android:buttonTint="@color/foodcourt_yellow_accent_500"
+                        android:backgroundTintMode="src_in"/>
 
                     <RadioGroup
                         android:layout_width="wrap_content"
@@ -153,13 +161,15 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:id="@+id/rb_location_ewi"
-                            android:text="EWI"/>
+                            android:text="EWI"
+                            android:buttonTint="@color/foodcourt_cyan_700"/>
 
                         <RadioButton
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:id="@+id/rb_location_rdw"
-                            android:text="RDW"/>
+                            android:text="RDW"
+                            android:buttonTint="@color/foodcourt_cyan_700"/>
 
                     </RadioGroup>
 

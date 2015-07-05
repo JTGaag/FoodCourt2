@@ -10,6 +10,8 @@
         <item name="colorPrimary">@color/foodcourt_cyan_500</item>
         <item name="colorPrimaryDark">@color/foodcourt_cyan_700</item>
         <item name="android:windowBackground">@color/foodcourt_cyan_500</item>
+        <item name="android:colorAccent">@color/foodcourt_yellow_accent_500</item>
+        <item name="android:colorControlActivated">@color/foodcourt_cyan_700</item>
     </style>
 
     <style name="MyActionBarStyle" parent="ThemeOverlay.AppCompat.ActionBar">
