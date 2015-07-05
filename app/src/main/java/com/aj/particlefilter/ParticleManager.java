@@ -6,6 +6,7 @@ import android.util.Log;
 import com.aj.map.CollisionMap;
 import com.aj.map.LineSegment;
 import com.aj.map.RectangleMap;
+import com.aj.wifi.ReturnedWifiPositionData;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -24,6 +25,7 @@ public class ParticleManager {
     Context context;
     final int RADIUS = 4;
     final double PERCENTAGE = 0.80;
+    final double disitributePercentage = 1.0;
     long saveTimestamp = 0;
 
     private ArrayList<Particle2[]> savedData = new ArrayList<Particle2[]>();
@@ -389,6 +391,35 @@ public class ParticleManager {
         //}
         return trackedMeanData2;
     }
+    public void weightedRedistribute(ArrayList<ReturnedWifiPositionData>  allPositionData ){
 
+        int totalWeight = 0;
+        int test = 1;
+
+        double tempX =0 , tempY = 0;
+        double availableParticles =  (this.nParticles * disitributePercentage);
+        double normalParticles = this.nParticles - availableParticles;
+        int particleIndex = 0;
+
+        for (ReturnedWifiPositionData  weight : allPositionData){
+                totalWeight =+ (int)weight.getCalcDifference();
+        }
+
+        for (ReturnedWifiPositionData  weight : allPositionData){
+            int particleAmount = (int)weight.getCalcDifference()/totalWeight;
+            for (int i=0;i<particleAmount; i++ ){
+
+
+                if ( rectangleMap.isPointinRectangle(tempX, tempY) >=0){
+                    particleArray[particleIndex] = new Particle2(tempX, tempY);
+                    particleArray[particleIndex].setParent(particleIndex);
+                    particleIndex++;
+                }
+                //weight.getxPosition()
+            }
+        }
+
+
+    }
 
 }
