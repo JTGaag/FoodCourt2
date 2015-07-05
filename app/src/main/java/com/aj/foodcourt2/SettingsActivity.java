@@ -5,7 +5,9 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Switch;
@@ -17,12 +19,14 @@ public class SettingsActivity extends AppCompatActivity {
     RadioButton rbQueuing, rbLocalization, rbJoost, rbJork, rbWillem, rbAlexander, rbEWI, rbRDW;
     Switch sDebugMode, sLocationMode;
     TextView tvAutoLocationName;
+    EditText etStrideLength;
     private final static String PREF_NAME = "foodcourtPreferenceFile";
     private final static String STEP_MODE_NAME = "prefStepMode";
     private final static String DEBUG_MODE_NAME = "prefDebugMode";
     private final static String LOCATION_MODE_NAME = "prefLocationMode";
     private final static String LOCATION_MANUAL_NAME = "prefLocationManual";
     private final static String LOCATION_AUTO_NAME = "prefLocationAuto";
+    private final static String STRIDE_LENGTH_NAME = "prefStrideLength";
     SharedPreferences settings;
 
     @Override
@@ -47,6 +51,9 @@ public class SettingsActivity extends AppCompatActivity {
 
         tvAutoLocationName = (TextView)findViewById(R.id.tv_auto_location);
 
+        etStrideLength = (EditText)findViewById(R.id.et_stride_length);
+
+        etStrideLength.setText(Integer.toString(settings.getInt(STRIDE_LENGTH_NAME,65)));
 
         switch (settings.getInt(STEP_MODE_NAME, 1)){
             case 1:
@@ -164,6 +171,19 @@ public class SettingsActivity extends AppCompatActivity {
                 editor.commit();
             }
         });
+
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+    }
+
+    /**
+     * Dispatch onPause() to fragments.
+     */
+    @Override
+    protected void onPause() {
+        super.onPause();
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putInt(STRIDE_LENGTH_NAME, (int)Math.round(Double.parseDouble(etStrideLength.getText().toString())));
+        editor.commit();
     }
 
     @Override

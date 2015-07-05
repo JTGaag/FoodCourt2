@@ -1,6 +1,8 @@
 package com.aj.foodcourt2;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -18,6 +20,7 @@ import android.location.LocationManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -115,7 +118,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     Bitmap bg;
 
     //Stuff
-    Button buttonMotionDetection, buttonReset, buttonBacktrack, buttonLocalize, buttonGetWifiData;
+    Button buttonMotionDetection, buttonReset, buttonBacktrack, buttonLocalize, buttonGetWifiData, buttonDistributeWifiData;
     ImageView ivPlay, ivStop, ivRecord;
     TextView tvAzimutDegrees, tvSteps;
     TextView tvCurrentLocation;
@@ -165,6 +168,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
     boolean serverRequest = false;
     boolean wifiIsIn = false;
     boolean serverIsIn = false;
+    boolean gotWifiData = false;
     final double WIFI_MAX_DRAW_SIZE = 45;
     final double WIFI_MIN_DRAW_SIZE = 5;
 
@@ -200,6 +204,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         buttonMotionDetection = (Button)findViewById(R.id.button_motion_detection);
         buttonReset = (Button)findViewById(R.id.button_reset_localization);
         buttonGetWifiData = (Button)findViewById(R.id.button_get_wifi_data);
+        buttonDistributeWifiData = (Button)findViewById(R.id.button_distribute_wifi_data);
 
         buttonBacktrack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -257,6 +262,21 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
                 //////////////////////////////
                  */
                 wifiManager.startScan();
+            }
+        });
+
+        buttonDistributeWifiData.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(gotWifiData){
+                    particleManager = new ParticleManager(10000, rectangleMap, collisionMap, getApplicationContext());
+                    //Get the array of current particles
+                    particleManager.weightedRedistribute(returnedWifiPositionDataArrayList);
+                    particleArray = particleManager.getParticleArray();
+                    redrawMapWithWifiData();
+                }else{
+                    Toast.makeText(context, "WiFi Data needs to be collected", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -352,7 +372,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         6: Alexander
          */
         queuingDataHandler = new QueuingDataHandler(this, 50, 1, 2, settings.getInt(STEP_MODE_NAME, 2), false);
-        motionDataHandler = new MotionDataHandler(this);
+        motionDataHandler = new MotionDataHandler(this, settings);
 
         //Map things
         initiateMapAndParsifalManager();
@@ -680,6 +700,8 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
             maxCalcDifference = Math.max(wifiPositionData.calulateCalcDifference(theoryMax), maxCalcDifference);
         }
 
+        gotWifiData = true;
+
         redrawMapWithWifiData();
 
         Log.d(LOG_TAG, "Max differenc (from data): " + theoryMax);
@@ -690,7 +712,26 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
     public void backTrack(){
 
-        sendWifiDataToServer();
+        //Delay sending wifi information
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                new AlertDialog.Builder(context)
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .setTitle(R.string.send_wifi_info)
+                        .setMessage(R.string.msg_wifi_info)
+                        .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                sendWifiDataToServer();
+                            }
+                        })
+                        .setNegativeButton(R.string.no, null)
+                        .show();
+            }
+        }, 5000);
+
 
         ArrayList<TimePositionData> trackedMeanData;
         double[] beginCoordinates = new double[2];
@@ -1240,13 +1281,13 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         lineSegmentArrayList.add(new LineSegment(3.03, 4.62, 5.43, 4.62));//wall hall/GR
 
         lineSegmentArrayList.add(new LineSegment(0, 3.36, 3.79, 3.36));//wall kamer/hall1
-        //lineSegmentArrayList.add(new LineSegment(3.79, 3.36, 4.765, 3.36));//wall kamer/hall1 Deur willem
+        lineSegmentArrayList.add(new LineSegment(3.79, 3.36, 4.765, 3.36));//wall kamer/hall1 Deur willem
         lineSegmentArrayList.add(new LineSegment(4.765, 3.36, 5.325, 3.36));//wall kamer/hall1 W/V
         //lineSegmentArrayList.add(new LineSegment(5.325, 3.36, 6.3, 3.36));//wall kamer/hall1 Deur Victor
         lineSegmentArrayList.add(new LineSegment(6.3, 3.36, 12.355, 3.36));//wall kamer/hall1 J/V
         //lineSegmentArrayList.add(new LineSegment(12.355, 3.36, 13.33, 3.36));//wall kamer/hall1 Deur Jerom
         lineSegmentArrayList.add(new LineSegment(13.33, 3.36, 13.89, 3.36));//wall kamer/hall1 J/J
-        //lineSegmentArrayList.add(new LineSegment(13.89, 3.36, 14.865, 3.36));//wall kamer/hall1 Deur Jork
+        lineSegmentArrayList.add(new LineSegment(13.89, 3.36, 14.865, 3.36));//wall kamer/hall1 Deur Jork
         lineSegmentArrayList.add(new LineSegment(14.865, 3.36, 18.62, 3.36));//wall kamer/hall1 J/J
 
 
@@ -1255,10 +1296,10 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
         //Rectangle (room) map
         //
         ////////////////////////////////////////////////////////////////////////
-        rectangleArrayList.add(new Rectangle(0, 0, 5.045, 3.36));//Willems kamer
+        //rectangleArrayList.add(new Rectangle(0, 0, 5.045, 3.36));//Willems kamer
         rectangleArrayList.add(new Rectangle(5.045, 0, 4.28, 3.36));//Victors kamer
         rectangleArrayList.add(new Rectangle(9.325, 0, 4.285, 3.36));//Jeroms kamer
-        rectangleArrayList.add(new Rectangle(13.61, 0, 5.01, 3.36));//Jorks kamer
+        //rectangleArrayList.add(new Rectangle(13.61, 0, 5.01, 3.36));//Jorks kamer
         rectangleArrayList.add(new Rectangle(0, 3.36, 3.03, 3.89));//GR1
         rectangleArrayList.add(new Rectangle(3.03, 4.62, 2.4, 2.63));//GR2
         rectangleArrayList.add(new Rectangle(12.95, 4.62, 2.29, 2.63));//Joost1

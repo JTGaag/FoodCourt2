@@ -327,7 +327,7 @@ public class CombinedActivity extends ActionBarActivity implements SensorEventLi
         6: Alexander
          */
         queuingDataHandler = new QueuingDataHandler(this, 50, 1, 2, settings.getInt(STEP_MODE_NAME, 2), false);
-        motionDataHandler = new MotionDataHandler(this);
+        motionDataHandler = new MotionDataHandler(this, settings);
     }
 
     @Override

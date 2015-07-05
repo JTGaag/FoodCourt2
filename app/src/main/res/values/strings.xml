@@ -16,4 +16,8 @@
     <string name="title_activity_queuing">QueuingActivity</string>
     <string name="title_activity_activity_monitoring">ActivityMonitoringActivity</string>
     <string name="title_activity_localization">LocalizationActivity</string>
+    <string name="send_wifi_info">Send WiFi data to server</string>
+    <string name="msg_wifi_info">Are you sure you want to send WiFi information to the server?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
 </resources>

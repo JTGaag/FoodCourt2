@@ -25,8 +25,9 @@ public class ParticleManager {
     Context context;
     final int RADIUS = 4;
     final double PERCENTAGE = 0.80;
-    final double disitributePercentage = 1.0;
+    final double DISTRIBUTE_PERCENTAGE = 0.70;
     long saveTimestamp = 0;
+    final double DISTRIBUTE_RADIUS = 2.0;
 
     private ArrayList<Particle2[]> savedData = new ArrayList<Particle2[]>();
     private ArrayList<Long> savedTimestamps = new ArrayList<Long>();
@@ -132,6 +133,7 @@ public class ParticleManager {
     }
 
     public void initiateParticlesMap(){
+        Log.d("Particle manager", "Initate map");
         Random random = new Random();
         ArrayList<Rectangle> rectangles = rectangleMap.getRectangles();
         for(int i=0; i<nParticles; i++){
@@ -391,34 +393,62 @@ public class ParticleManager {
         //}
         return trackedMeanData2;
     }
+
     public void weightedRedistribute(ArrayList<ReturnedWifiPositionData>  allPositionData ){
 
-        int totalWeight = 0;
-        int test = 1;
+        //Clear data
+        savedData.clear();
+        savedTimestamps.clear();
+        trackedMeanData.clear();
 
-        double tempX =0 , tempY = 0;
-        double availableParticles =  (this.nParticles * disitributePercentage);
-        double normalParticles = this.nParticles - availableParticles;
+        Log.d("Particle manager", "Data size: "+ allPositionData.size());
+        double totalWeight = 0;
+        particleArray = new Particle2[nParticles];
+
+        double availableParticles =  (nParticles * DISTRIBUTE_PERCENTAGE);
+        Log.d("Particle manager", "Available particles: "+ availableParticles);
+        double normalParticles = nParticles - availableParticles;
         int particleIndex = 0;
+        Random random = new Random();
 
         for (ReturnedWifiPositionData  weight : allPositionData){
-                totalWeight =+ (int)weight.getCalcDifference();
+                totalWeight += weight.getCalcDifference();
         }
 
-        for (ReturnedWifiPositionData  weight : allPositionData){
-            int particleAmount = (int)weight.getCalcDifference()/totalWeight;
-            for (int i=0;i<particleAmount; i++ ){
+        for (ReturnedWifiPositionData  data : allPositionData){
+            int particleAmount = (int)Math.floor(availableParticles * data.getCalcDifference()/totalWeight);
+            //Log.d("Particle manager", "Particle amount: "+ particleAmount);
+            for (int i=0;i<particleAmount; i=i ){
 
+                double direction = random.nextDouble() * 2 * Math.PI;
+                double radius = random.nextDouble() * DISTRIBUTE_RADIUS;
+
+                double tempX = data.getxPosition() + Math.cos(direction) * radius;
+                double tempY = data.getyPosition() + Math.sin(direction) * radius;
 
                 if ( rectangleMap.isPointinRectangle(tempX, tempY) >=0){
+                    //Log.d("particle Index", "index: "+particleIndex);
                     particleArray[particleIndex] = new Particle2(tempX, tempY);
                     particleArray[particleIndex].setParent(particleIndex);
                     particleIndex++;
+                    i++;
                 }
-                //weight.getxPosition()
+
             }
         }
 
+        Log.d("Particla Manager", "ParticleIndex: " + particleIndex);
+
+        ArrayList<Rectangle> rectangles = rectangleMap.getRectangles();
+        for(int i=particleIndex; i<nParticles; i++){
+            Rectangle tempRec = rectangles.get(rectangleMap.getRectangleIndex(random.nextDouble()));
+            double tempX = tempRec.getX() + tempRec.getWidth() * random.nextDouble();
+            double tempY = tempRec.getY() + tempRec.getHeight() * random.nextDouble();
+            particleArray[i] = new Particle2(tempX, tempY);
+            particleArray[i].setParent(i);
+        }
+
+        saveParticleData();
 
     }
 

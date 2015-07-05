@@ -1,5 +1,6 @@
 package com.aj.particlefilter;
 
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -9,6 +10,10 @@ import java.util.ArrayList;
  */
 public class MotionDataHandler {
     final String LOG_TAG = "Motion Data Handler";
+
+
+    private final static String STRIDE_LENGTH_NAME = "prefStrideLength";
+    SharedPreferences settings;
 
     //ArrayLists to save motion data
     ArrayList<GyroData> gyroDataArrayList = new ArrayList<GyroData>();
@@ -31,14 +36,17 @@ public class MotionDataHandler {
     final double NS2S = 1.0/1000000000.0;
     final double TIME_LIMIT = 4.0; //time limit in seconds when new motion needs to ben calculated and updated.
     final double ROTATION_LIMIT = 60.0; // Rotation limit in degrees when motion needs to be updated
-    double buildingRotationOffsetDeg = 246.8; //ROtation offset from true north to posiitve x-axis of map (EWI: 176.5; RDW:246.8 (220))
+    double buildingRotationOffsetDeg = 246.8; //ROtation offset from true north to posiitve x-axis of map (EWI: 176.5; RDW:246.8 (220)) //Smaller = clockwise
     final double BUILDING_ROTATION_OFFSET_DEG_EWI = 176.5; //ROtation offset from true north to posiitve x-axis of map (EWI: 176.5; RDW:246.8 (220))
     final double BUILDING_ROTATION_OFFSET_DEG_RDW = 246.8; //ROtation offset from true north to posiitve x-axis of map (EWI: 176.5; RDW:246.8 (220))
-    final double DISTANCE_PER_STEP = 0.65;
+    double distancePerStep = 0.64;
     final int ROTATION_POINTS = 100;
 
-    public MotionDataHandler(MotionListener motionListener) {
+    public MotionDataHandler(MotionListener motionListener, SharedPreferences settings) {
         this.motionListener = motionListener;
+        this.settings = settings;
+        distancePerStep = settings.getInt(STRIDE_LENGTH_NAME,64)/100.0;
+        Log.d("Motion handler", "Distance per Step: " + distancePerStep);
     }
 
     private void deleteOldData(long endTimestamp){
@@ -166,7 +174,7 @@ public class MotionDataHandler {
         //TODO: what if two calculations steps is needed between step gathering
 
         double direction = meanDirection() + buildingRotationOffsetDeg;
-        double distance = numberOfStepsInMotion * DISTANCE_PER_STEP;
+        double distance = numberOfStepsInMotion * distancePerStep;
         motionListener.onMotion(direction, distance, newCalculationTime);
 
         //Reset request boolean TODO: FIx with extra check for second calculation before getting step data
