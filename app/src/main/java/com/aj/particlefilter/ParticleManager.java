@@ -271,6 +271,7 @@ public class ParticleManager {
             if (diffRadius <= RADIUS) {
                 particleLocations[counter] = i;
                 counter++;
+                particleArray[i].setInRadius(true);
             }
         }
         calcPercentage = counter/nParticles;
@@ -344,13 +345,21 @@ public class ParticleManager {
 
     public ArrayList<TimePositionData> backTrack2() {
 
+        for(Particle2 particle: particleArray){
+            particle.setInRadius(false);
+        }
+
+        hasConverged();
+
         ArrayList<TimePositionData> trackedMeanData2 = new ArrayList<TimePositionData>();
 
         //Make everything true for first round (if particles are converged
         //TODO: change to only use particles that are in 90% of mean or something (when converged)
         boolean[] trueParentCopy = new boolean[nParticles]; //Array to be used to check for parents (will be persistent throughout loops
         for (int i=0; i<nParticles; i++){
-            trueParentCopy[i] = true;
+            if(particleArray[i].isInRadius()) {
+                trueParentCopy[i] = true;
+            }
         }
 
         //if (hasConverged()) {

@@ -171,8 +171,10 @@ public class MainActivity extends AppCompatActivity {
 
         LocationManager lm = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
         Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        locMe.setLatitude(location.getLatitude());
-        locMe.setLongitude(location.getLongitude());
+        if(location!=null) {
+            locMe.setLatitude(location.getLatitude());
+            locMe.setLongitude(location.getLongitude());
+        }
 
         double distanceEWI = locMe.distanceTo(locEWI);
         double distanceRDW = locMe.distanceTo(locRDW);

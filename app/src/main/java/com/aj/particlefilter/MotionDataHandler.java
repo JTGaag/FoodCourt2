@@ -11,7 +11,12 @@ import java.util.ArrayList;
 public class MotionDataHandler {
     final String LOG_TAG = "Motion Data Handler";
 
-
+    private final static String PREF_NAME = "foodcourtPreferenceFile";
+    private final static String STEP_MODE_NAME = "prefStepMode";
+    private final static String DEBUG_MODE_NAME = "prefDebugMode";
+    private final static String LOCATION_MODE_NAME = "prefLocationMode";
+    private final static String LOCATION_MANUAL_NAME = "prefLocationManual";
+    private final static String LOCATION_AUTO_NAME = "prefLocationAuto";
     private final static String STRIDE_LENGTH_NAME = "prefStrideLength";
     SharedPreferences settings;
 
@@ -37,7 +42,7 @@ public class MotionDataHandler {
     final double TIME_LIMIT = 4.0; //time limit in seconds when new motion needs to ben calculated and updated.
     final double ROTATION_LIMIT = 60.0; // Rotation limit in degrees when motion needs to be updated
     double buildingRotationOffsetDeg = 246.8; //ROtation offset from true north to posiitve x-axis of map (EWI: 176.5; RDW:246.8 (220)) //Smaller = clockwise
-    final double BUILDING_ROTATION_OFFSET_DEG_EWI = 176.5; //ROtation offset from true north to posiitve x-axis of map (EWI: 176.5; RDW:246.8 (220))
+    final double BUILDING_ROTATION_OFFSET_DEG_EWI = 175.0; //ROtation offset from true north to posiitve x-axis of map (EWI: 176.5; RDW:246.8 (220))
     final double BUILDING_ROTATION_OFFSET_DEG_RDW = 246.8; //ROtation offset from true north to posiitve x-axis of map (EWI: 176.5; RDW:246.8 (220))
     double distancePerStep = 0.64;
     final int ROTATION_POINTS = 100;
@@ -47,6 +52,32 @@ public class MotionDataHandler {
         this.settings = settings;
         distancePerStep = settings.getInt(STRIDE_LENGTH_NAME,64)/100.0;
         Log.d("Motion handler", "Distance per Step: " + distancePerStep);
+
+        if(settings.getBoolean(LOCATION_MODE_NAME, true)){//Manual mode
+            switch(settings.getInt(LOCATION_MANUAL_NAME, 1)){
+                case 1://EWI
+                    buildingRotationOffsetDeg = BUILDING_ROTATION_OFFSET_DEG_EWI;
+                    break;
+                case 2://RDW
+                    buildingRotationOffsetDeg = BUILDING_ROTATION_OFFSET_DEG_RDW;
+                    break;
+                default: //EWI
+                    buildingRotationOffsetDeg = BUILDING_ROTATION_OFFSET_DEG_EWI;
+                    break;
+            }
+        }else{//Automatic mode
+            switch(settings.getInt(LOCATION_AUTO_NAME, 1)){
+                case 1://EWI
+                    buildingRotationOffsetDeg = BUILDING_ROTATION_OFFSET_DEG_EWI;
+                    break;
+                case 2://RDW
+                    buildingRotationOffsetDeg = BUILDING_ROTATION_OFFSET_DEG_RDW;
+                    break;
+                default: //EWI
+                    buildingRotationOffsetDeg = BUILDING_ROTATION_OFFSET_DEG_EWI;
+                    break;
+            }
+        }
     }
 
     private void deleteOldData(long endTimestamp){

@@ -223,7 +223,7 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
             public void onClick(View v) {
                 motionDetection = !motionDetection;
                 changeImages();
-                Toast.makeText(context, "Motiondeatection: " + motionDetection, Toast.LENGTH_SHORT).show();
+                //Toast.makeText(context, "Motiondeatection: " + motionDetection, Toast.LENGTH_SHORT).show();
             }
         });
         buttonReset.setOnClickListener(new View.OnClickListener() {
@@ -314,10 +314,12 @@ public class LocalizationActivity extends AppCompatActivity implements SensorEve
 
         LocationManager lm = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
         Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        locMe.setLatitude(location.getLatitude());
-        locMe.setLongitude(location.getLongitude());
+        if(location!=null) {
+            locMe.setLatitude(location.getLatitude());
+            locMe.setLongitude(location.getLongitude());
+        }
         Log.d(LOG_TAG, "Distance RDW-Me: "+locRDW.distanceTo(locMe));
-        Toast.makeText(context, "Distance RDW-Me: "+locRDW.distanceTo(locMe), Toast.LENGTH_LONG).show();
+        //Toast.makeText(context, "Distance RDW-Me: "+locRDW.distanceTo(locMe), Toast.LENGTH_LONG).show();
 
         LocationListener locationListener = new LocationListener() {
             public void onLocationChanged(Location location) {

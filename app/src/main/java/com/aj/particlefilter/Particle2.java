@@ -8,6 +8,7 @@ public class Particle2 {
     double x, y, oldX, oldY, direction, distance;
     boolean destroyed = false;
     int parent, id;
+    boolean inRadius = false;
 
 
     /**
@@ -42,6 +43,15 @@ public class Particle2 {
         this.id = id;
 
     }
+
+    public boolean isInRadius() {
+        return inRadius;
+    }
+
+    public void setInRadius(boolean inRadius) {
+        this.inRadius = inRadius;
+    }
+
     public double getX() {
         return x;
     }
