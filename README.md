@@ -1,4 +1,4 @@
-# FoodCourt version2
+# FoodCourt v2
 Foodcourt app for smartphone sensing second version
 Authors: J.T. van der Gaag, A.F.A. de Moes
 
